@@ -1,0 +1,31 @@
+/ {
+	
+	//pwm0: pwm {
+	//	compatible = "st,stm32-pwm";
+	//	//compatibie = "weact,blackpill-f401ce";
+	//	status = "okay";
+	//	pinctrl-0 = <&tim2_ch4_pa3>;
+	//	pinctrl-names = "default";
+	//	#pwm-cells = <3>;
+	//};
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm2 2 PWM_MSEC(20) (PWM_POLARITY_NORMAL)>;
+		};
+	};
+	aliases {
+		pwm-led0 = &pwm_led0;
+	};
+
+};
+
+&timers2 {
+	status = "okay";
+
+	pwm2: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim2_ch4_pa3>;
+		pinctrl-names = "default";
+	};
+};
