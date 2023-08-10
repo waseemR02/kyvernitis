@@ -25,7 +25,7 @@
 
 	pwm2: pwm {
 		status = "okay";
-		pinctrl-0 = <&tim2_ch4_pa3>;
+		pinctrl-0 = <&tim2_ch2_pa1>;
 		pinctrl-names = "default";
 	};
 };
