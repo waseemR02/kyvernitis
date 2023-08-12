@@ -11,7 +11,7 @@
 	pwmleds {
 		compatible = "pwm-leds";
 		pwm_led0: pwm_led_0 {
-			pwms = <&pwm2 2 PWM_MSEC(20) (PWM_POLARITY_NORMAL)>;
+			pwms = <&pwm2 0 PWM_MSEC(20) (PWM_POLARITY_NORMAL)>;
 		};
 	};
 	aliases {
@@ -25,7 +25,7 @@
 
 	pwm2: pwm {
 		status = "okay";
-		pinctrl-0 = <&tim2_ch2_pa1>;
+		pinctrl-0 = <&tim2_ch1_pa0 &tim2_ch2_pa1 &tim2_ch3_pa2 &tim2_ch4_pa3>;
 		pinctrl-names = "default";
 	};
 };
