@@ -15,6 +15,10 @@
 		pwm-led0 = &pwm_led0;
 	};
 
+	chosen {
+		zephyr,canbus = &mcp2515_can_bus;
+	};
+
 };
 
 &timers2 {
@@ -37,5 +41,25 @@
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <12>;
+	};
+};
+
+&spi1 {
+	status = "okay";
+	cs-gpios = <&gpioc 14 GPIO_ACTIVE_LOW>;	
+	mcp2515_can_bus: can@0 {
+		compatible = "microchip,mcp2515";
+		spi-max-frequency = <1000000>;
+		int-gpios = <&gpiob 9 GPIO_ACTIVE_LOW>; /* B9 */
+		status = "okay";
+		reg = <0x0>;
+		osc-freq = <16000000>;
+		bus-speed = <125000>;
+		sjw = <1>;
+		sample-point = <875>;
+
+		can-transceiver {
+			max-bitrate = <1000000>;
+		};
 	};
 };
