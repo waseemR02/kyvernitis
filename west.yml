@@ -1,0 +1,16 @@
+manifest:
+
+  projects:
+    - name: zephyr
+      url: https://github.com/zephyrproject-rtos/zephyr
+      revision: main
+      path: zephyr
+      west-commands: scripts/west-commands.yml
+
+    - name: module-sample
+      url: https://github.com/waseemr02/libcanard
+      revision: main
+      path: modules/lib/libcanard
+
+  self:
+    path: kyvernitis
