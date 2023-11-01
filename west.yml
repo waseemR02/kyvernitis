@@ -7,9 +7,9 @@ manifest:
       path: zephyr
       west-commands: scripts/west-commands.yml
 
-    - name: module-sample
+    - name: libcanard 
       url: https://github.com/waseemr02/libcanard
-      revision: main
+      revision: master 
       path: modules/lib/libcanard
 
   self:
