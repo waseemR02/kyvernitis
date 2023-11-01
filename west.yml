@@ -6,7 +6,10 @@ manifest:
       revision: main
       path: zephyr
       west-commands: scripts/west-commands.yml
-      import: true
+      import: 
+        name-allowlist:
+          - cmsis
+          - hal_stm32
 
     - name: libcanard 
       url: https://github.com/waseemr02/libcanard
