@@ -14,7 +14,7 @@ manifest:
     - name: libcanard 
       url: https://github.com/waseemr02/libcanard
       revision: master 
-      path: modules/lib/libcanard
+      path: modules/lib/canard
 
   self:
     path: kyvernitis
