@@ -5,14 +5,35 @@
 	//		pwms = <&pwm2 0 PWM_MSEC(20) (PWM_POLARITY_NORMAL)>;
 	//	};
 	//};
+	
+	pwmmotors {
+		compatible = "pwm-motors";
+		pwm_motor_1: pwm_1 {
+			pwms = <&pwm1 3 PWM_MSEC(20) (PWM_POLARITY_NORMAL)>;
+		};
+		pwm_motor_2: pwm_2 {
+			pwms = <&pwm2 1 PWM_MSEC(20) (PWM_POLARITY_NORMAL)>;
+		};
+
+		pwm_servo_1: pwm_3 {
+			pwms = <&pwm3 2 PWM_MSEC(20) (PWM_POLARITY_NORMAL)>;
+		};
+
+		pwm_servo_2: pwm_4 {
+			pwms = <&pwm4 3 PWM_MSEC(20) (PWM_POLARITY_NORMAL)>;
+		};
+	};
 
 	zephyr,user {
 		io-channels = <&adc1 0>, <&adc1 1>, <&adc1 2>, <&adc1 3>, <&adc1 4>, <&adc1 8>, <&adc1 9>;
 	};
 
-	//aliases {
-	//	pwm-led0 = &pwm_led0;
-	//};
+	aliases {
+		pwm-motor1 = &pwm_motor_1;
+		pwm-motor2 = &pwm_motor_2;
+		pwm-servo1 = &pwm_servo_1;
+		pwm-servo2 = &pwm_servo_2;
+	};
 
 	chosen {
 		zephyr,canbus = &mcp2515_can_bus;
