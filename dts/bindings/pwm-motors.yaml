@@ -1,0 +1,23 @@
+description: PWM-driven motors (parent node)
+
+compatible: "pwm-motors"
+
+include: base.yaml
+
+child-binding:
+  description: PWM-driven motors (child node)
+  properties:
+    pwms:
+      required: true
+      type: phandle-array
+      description: PWM specifier driving the motor
+
+    min-pulse:
+      required: true
+      type: int  
+      description: Minimum pulse width (nanoseconds)
+
+    max-pulse:
+      required: true
+      type: int 
+      description: Maximum pulse width (nanoseconds)

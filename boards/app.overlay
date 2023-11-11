@@ -1,26 +1,27 @@
 / {	
-	//pwmleds {
-	//	compatible = "pwm-leds";
-	//	pwm_led0: pwm_led_0 {
-	//		pwms = <&pwm2 0 PWM_MSEC(20) (PWM_POLARITY_NORMAL)>;
-	//	};
-	//};
-	
 	pwmmotors {
 		compatible = "pwm-motors";
 		pwm_motor_1: pwm_1 {
-			pwms = <&pwm1 3 PWM_MSEC(20) (PWM_POLARITY_NORMAL)>;
+			pwms = <&pwm1 10 PWM_MSEC(20) (PWM_POLARITY_NORMAL)>;
+			min-pulse = <PWM_USEC(1000)>;
+			max-pulse = <PWM_USEC(2000)>;
 		};
 		pwm_motor_2: pwm_2 {
 			pwms = <&pwm2 1 PWM_MSEC(20) (PWM_POLARITY_NORMAL)>;
+			min-pulse = <PWM_USEC(1000)>;
+			max-pulse = <PWM_USEC(2000)>;
 		};
 
 		pwm_servo_1: pwm_3 {
 			pwms = <&pwm3 2 PWM_MSEC(20) (PWM_POLARITY_NORMAL)>;
+			min-pulse = <PWM_USEC(1000)>;
+			max-pulse = <PWM_USEC(2000)>;
 		};
 
 		pwm_servo_2: pwm_4 {
 			pwms = <&pwm4 3 PWM_MSEC(20) (PWM_POLARITY_NORMAL)>;
+			min-pulse = <PWM_USEC(1000)>;
+			max-pulse = <PWM_USEC(2000)>;
 		};
 	};
 
