@@ -11,6 +11,7 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/pwm.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
@@ -28,6 +29,37 @@ static const struct adc_dt_spec adc_channels[] = {
 	DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), io_channels,
 			     DT_SPEC_AND_COMMA)
 };
+
+struct pwm_motor {
+	const struct pwm_dt_spec dev;
+	const uint32_t min_pulse;
+	const uint32_t max_pulse;
+};
+
+static const struct pwm_motor roboclaw_1 = {
+	.dev = PWM_DT_SPEC_GET(DT_ALIAS(pwm_motor1)),
+	.min_pulse = DT_PROP(DT_ALIAS(pwm_motor1), min_pulse),
+	.max_pulse = DT_PROP(DT_ALIAS(pwm_motor1), max_pulse)
+};
+
+static const struct pwm_motor roboclaw_2 = {
+	.dev = PWM_DT_SPEC_GET(DT_ALIAS(pwm_motor2)),
+	.min_pulse = DT_PROP(DT_ALIAS(pwm_motor2), min_pulse),
+	.max_pulse = DT_PROP(DT_ALIAS(pwm_motor2), max_pulse)
+};
+
+static const struct pwm_motor servo_1 = {
+	.dev = PWM_DT_SPEC_GET(DT_ALIAS(pwm_servo1)),
+	.min_pulse = DT_PROP(DT_ALIAS(pwm_servo1), min_pulse),
+	.max_pulse = DT_PROP(DT_ALIAS(pwm_servo1), max_pulse)
+};
+
+static const struct pwm_motor servo_2 = {
+	.dev = PWM_DT_SPEC_GET(DT_ALIAS(pwm_servo2)),
+	.min_pulse = DT_PROP(DT_ALIAS(pwm_servo2), min_pulse),
+	.max_pulse = DT_PROP(DT_ALIAS(pwm_servo2), max_pulse)
+};
+
 
 int main(void)
 {
