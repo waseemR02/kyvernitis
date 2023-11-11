@@ -20,6 +20,46 @@
 
 };
 
+&timers1 {
+	status = "okay";
+
+	pwm1: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim1_ch3n_pb15>; 
+		pinctrl-names = "default";
+	};	
+};
+
+&timers2 {
+	status = "okay";
+
+	pwm2: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim2_ch1_pa15>;
+		pinctrl-names = "default";
+	};
+};
+
+&timers3 {
+	status = "okay";
+
+	pwm3: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim3_ch2_pb5>;
+		pinctrl-names = "default";
+	};
+};
+
+&timers4 {
+	status = "okay";
+
+	pwm4: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim4_ch3_pb8>;
+		pinctrl-names = "default";
+	};
+};
+
 &adc1 {
 	pinctrl-0 = <&adc1_in0_pa0 &adc1_in1_pa1 &adc1_in2_pa2 &adc1_in3_pa3 &adc1_in4_pa4 &adc1_in8_pb0 &adc1_in9_pb1>;
 	pinctrl-names = "default";
