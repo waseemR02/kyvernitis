@@ -1,9 +1,3 @@
-/*
- * Copyright (c) 2020 Libre Solar Technologies GmbH
- *
- * SPDX-License-Identifier: Apache-2.0
- */
-
 #include <inttypes.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -24,6 +18,8 @@
 #define DT_SPEC_AND_COMMA(node_id, prop, idx) \
 	ADC_DT_SPEC_GET_BY_IDX(node_id, idx),
 
+static const uint8_t pwm_motor_count = 8; 
+
 /* Data of ADC io-channels specified in devicetree. */
 static const struct adc_dt_spec adc_channels[] = {
 	DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), io_channels,
@@ -31,35 +27,79 @@ static const struct adc_dt_spec adc_channels[] = {
 };
 
 struct pwm_motor {
-	const struct pwm_dt_spec dev;
+	const struct pwm_dt_spec dev_spec;
 	const uint32_t min_pulse;
 	const uint32_t max_pulse;
 };
 
 static const struct pwm_motor roboclaw_1 = {
-	.dev = PWM_DT_SPEC_GET(DT_ALIAS(pwm_motor1)),
+	
+	.dev_spec = PWM_DT_SPEC_GET(DT_ALIAS(pwm_motor1)),
 	.min_pulse = DT_PROP(DT_ALIAS(pwm_motor1), min_pulse),
 	.max_pulse = DT_PROP(DT_ALIAS(pwm_motor1), max_pulse)
 };
 
 static const struct pwm_motor roboclaw_2 = {
-	.dev = PWM_DT_SPEC_GET(DT_ALIAS(pwm_motor2)),
+	.dev_spec = PWM_DT_SPEC_GET(DT_ALIAS(pwm_motor2)),
 	.min_pulse = DT_PROP(DT_ALIAS(pwm_motor2), min_pulse),
 	.max_pulse = DT_PROP(DT_ALIAS(pwm_motor2), max_pulse)
 };
 
 static const struct pwm_motor servo_1 = {
-	.dev = PWM_DT_SPEC_GET(DT_ALIAS(pwm_servo1)),
+	.dev_spec = PWM_DT_SPEC_GET(DT_ALIAS(pwm_servo1)),
 	.min_pulse = DT_PROP(DT_ALIAS(pwm_servo1), min_pulse),
 	.max_pulse = DT_PROP(DT_ALIAS(pwm_servo1), max_pulse)
 };
 
 static const struct pwm_motor servo_2 = {
-	.dev = PWM_DT_SPEC_GET(DT_ALIAS(pwm_servo2)),
+	.dev_spec = PWM_DT_SPEC_GET(DT_ALIAS(pwm_servo2)),
 	.min_pulse = DT_PROP(DT_ALIAS(pwm_servo2), min_pulse),
 	.max_pulse = DT_PROP(DT_ALIAS(pwm_servo2), max_pulse)
 };
 
+
+// Wrapper around pwm_set_pulse_dt to ensure that pulse_width
+// remains under max-min range
+static inline int pwm_motor_write(const struct pwm_motor *motor, uint32_t pulse_width)
+{
+	// wrapper around pwm_set_pulse_dt to ensure that pulse_width 
+	// remains under max-min range
+	if (pulse_width <= motor->min_pulse)
+		pulse_width = motor->min_pulse;
+	if (pulse_width >= motor->max_pulse)
+		pulse_width = motor->max_pulse;
+	
+	int ret = pwm_set_pulse_dt(&(motor->dev_spec), pulse_width);
+
+	return ret;
+}
+
+// returns the number of ready pwm motors
+static inline int pwm_motors_ready()
+{
+	uint8_t device_count = 0;
+	if (!pwm_is_ready_dt(&(roboclaw_1.dev_spec))){
+		printk("Error: PWM device %s is not ready\n", roboclaw_1.dev_spec.dev->name);
+		device_count += 1;
+	}
+
+	if (!pwm_is_ready_dt(&(roboclaw_2.dev_spec))){
+		printk("Error: PWM device %s is not ready\n", roboclaw_2.dev_spec.dev->name);
+		device_count += 1;
+	}
+
+	if (!pwm_is_ready_dt(&(servo_1.dev_spec))){
+		printk("Error: PWM device %s is not ready\n", servo_1.dev_spec.dev->name);
+		device_count += 1;
+	}
+
+	if (!pwm_is_ready_dt(&(servo_2.dev_spec))){
+		printk("Error: PWM device %s is not ready\n", servo_2.dev_spec.dev->name);
+		device_count += 1;
+	}
+
+	return device_count;
+}
 
 int main(void)
 {
@@ -71,7 +111,7 @@ int main(void)
 		/* buffer size in bytes, not number of samples */
 		.buffer_size = sizeof(buf),
 	};
-
+	
 	/* Configure channels individually prior to sampling. */
 	for (size_t i = 0U; i < ARRAY_SIZE(adc_channels); i++) {
 		if (!adc_is_ready_dt(&adc_channels[i])) {
@@ -85,7 +125,7 @@ int main(void)
 			return 0;
 		}
 	}
-
+	
 	while (1) {
 		printk("ADC reading[%u]:\n", count++);
 		for (size_t i = 0U; i < ARRAY_SIZE(adc_channels); i++) {
@@ -124,7 +164,8 @@ int main(void)
 			}
 		}
 
-		k_sleep(K_MSEC(1000));
+		//k_sleep(K_MSEC(1000));
+		
 	}
 	return 0;
 }
