@@ -98,11 +98,18 @@ static inline int pwm_motors_ready()
 	return device_count;
 }
 
+enum direction {
+	DOWN,
+	UP,
+};
+
 int main(void)
 {
 	int err;
 	uint32_t count = 0;
 	uint16_t buf;
+	uint32_t pulse = 1500;
+	enum direction dir = UP;
 	struct adc_sequence sequence = {
 		.buffer = &buf,
 		/* buffer size in bytes, not number of samples */
@@ -123,6 +130,12 @@ int main(void)
 		}
 	}
 	
+	if (pwm_motors_ready() == pwm_motor_count)
+	{
+		printk("Error: All instances of PWM motors are not ready\n");
+		return 0;
+	}
+
 	while (1) {
 		printk("ADC reading[%u]:\n", count++);
 		for (size_t i = 0U; i < ARRAY_SIZE(adc_channels); i++) {
@@ -160,9 +173,45 @@ int main(void)
 				printk(" = %"PRId32" mV\n", val_mv);
 			}
 		}
+		while (dir == UP)
+		{
+			err = pwm_motor_write(&roboclaw_1, pulse);
+			err += pwm_motor_write(&roboclaw_2, pulse);
+			err += pwm_motor_write(&servo_1, pulse);
+			err += pwm_motor_write(&servo_2, pulse);
+			if (err < 0)
+			{
+				printk("Error failed to set pulse width\n");
+				return 0;
+			}
 
-		//k_sleep(K_MSEC(1000));
-		
+			pulse += 50;
+
+			if (pulse >= 2000)
+				dir = DOWN;
+
+			k_sleep(K_SECONDS(1));
+		}
+		while (dir == DOWN)
+		{
+			err = pwm_motor_write(&roboclaw_1, pulse);
+			err += pwm_motor_write(&roboclaw_2, pulse);
+			err += pwm_motor_write(&servo_1, pulse);
+			err += pwm_motor_write(&servo_2, pulse);
+
+			if (err < 0)
+			{
+				printk("Error failed to set pulse width\n");
+				return 0;
+			}
+
+			pulse -= 50;
+
+			if (pulse <= 1000)
+				dir = UP;
+
+			k_sleep(K_SECONDS(1));
+		}
 	}
 	return 0;
 }
