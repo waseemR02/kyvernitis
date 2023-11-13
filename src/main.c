@@ -1,6 +1,3 @@
-#include <inttypes.h>
-#include <stddef.h>
-#include <stdint.h>
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
