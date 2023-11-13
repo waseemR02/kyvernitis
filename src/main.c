@@ -77,25 +77,25 @@ static inline int pwm_motor_write(const struct pwm_motor *motor, uint32_t pulse_
 // returns the number of ready pwm motors
 static inline int pwm_motors_ready()
 {
-	uint8_t device_count = pwm_motor_count;
+	uint8_t device_count = 0;
 	if (!pwm_is_ready_dt(&(roboclaw_1.dev_spec))){
 		printk("Error: PWM device %s is not ready\n", roboclaw_1.dev_spec.dev->name);
-		device_count -= 1;
+		device_count += 1;
 	}
 
 	if (!pwm_is_ready_dt(&(roboclaw_2.dev_spec))){
 		printk("Error: PWM device %s is not ready\n", roboclaw_2.dev_spec.dev->name);
-		device_count -= 1;
+		device_count += 1;
 	}
 
 	if (!pwm_is_ready_dt(&(servo_1.dev_spec))){
 		printk("Error: PWM device %s is not ready\n", servo_1.dev_spec.dev->name);
-		device_count -= 1;
+		device_count += 1;
 	}
 
 	if (!pwm_is_ready_dt(&(servo_2.dev_spec))){
 		printk("Error: PWM device %s is not ready\n", servo_2.dev_spec.dev->name);
-		device_count -= 1;
+		device_count += 1;
 	}
 
 	return device_count;
