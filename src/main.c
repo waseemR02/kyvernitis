@@ -1,6 +1,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/kernel.h>
@@ -22,6 +23,8 @@ static const struct adc_dt_spec adc_channels[] = {
 	DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), io_channels,
 			     DT_SPEC_AND_COMMA)
 };
+
+static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
 
 struct pwm_motor {
 	const struct pwm_dt_spec dev_spec;
@@ -135,7 +138,16 @@ int main(void)
 		printk("Error: All instances of PWM motors are not ready\n");
 		return 0;
 	}
-
+	if (!gpio_is_ready_dt(&led))
+	{
+		printk("Error: Led not ready\n");
+		return 0;
+	}
+	if (gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE) < 0)
+	{
+		printk("Error: Led not configured\n");
+		return 0;
+	}
 	while (1) {
 		printk("ADC reading[%u]:\n", count++);
 		for (size_t i = 0U; i < ARRAY_SIZE(adc_channels); i++) {
@@ -189,7 +201,7 @@ int main(void)
 
 			if (pulse >= 2000)
 				dir = DOWN;
-
+			gpio_pin_toggle_dt(&led);
 			k_sleep(K_SECONDS(1));
 		}
 		while (dir == DOWN)
@@ -209,7 +221,7 @@ int main(void)
 
 			if (pulse <= 1000)
 				dir = UP;
-
+			gpio_pin_toggle_dt(&led);
 			k_sleep(K_SECONDS(1));
 		}
 	}
