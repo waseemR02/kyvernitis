@@ -1,10 +1,47 @@
 # Kyvernitis
 Zephyr Application  for R24 to program WeAct Blackpill F401cc as daughter board (for pixhawk)
+Repo contains source files for each subsystem.
 
-## Usage
+## Directory Structure
+```
+kyvernitis-ws/
+│
+├── kyvernitis/       │ <== Current Repo
+│    ├── bio-arm
+│    │    ├── boards
+│    │    │   └── app.overlay
+│    │    ├── CMakeLists.txt
+│    │    ├── Kconfig
+│    │    ├── prj.conf
+│    │    └── src
+│    │        └── main.c
+│    ├── sub-system
+│    │    ├── ...
+│    │
+│    ├── dts
+│    │   └── bindings
+│    │       └── pwm-motors.yaml
+│    │       └── ...
+│    ├── README.md
+│    ├── west.yml
+│    └── zephyr
+│        └── module.yml               
+│                                   
+├── modules/
+│   └── lib/
+│       └── canard/
+│   └── hal/
+│       └── ...     
+│
+└── zephyr/              
+    └── west.yml         
+                         
+```
+
+## Installation
 This application contains a manifest file so it will follow a T2 topology workspace (refer to Zephyr docs)
 
-**Assumimg you have all the dependencies for zephyr development as well as the toolchain from the official release**
+**Assuming you have all the dependencies for zephyr development as well as the toolchain from the official release**
 
 
 ```
@@ -30,7 +67,7 @@ source zephyr/zephyr-env.sh
 ```
 
 
-If everything is installed successfully then it should build the working src/main.c without any errors
+If everything is installed successfully then it should build any working sub-system without any errors
 ```
 west build -p always -o=-j4 -b blackpill_f401cc kyvernitis/bio-arm
 ```
