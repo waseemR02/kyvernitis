@@ -1,5 +1,6 @@
 # Kyvernitis
-Zephyr Application  for R24 to program WeAct Blackpill F401cc as daughter board (for pixhawk)
+Zephyr Application  for R24 to program WeAct Blackpill F401cc as daughter board (for pixhawk).
+
 Repo contains source files for each subsystem.
 
 ## Directory Structure
