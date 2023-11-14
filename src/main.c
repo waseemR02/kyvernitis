@@ -8,6 +8,10 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
+
 #if !DT_NODE_EXISTS(DT_PATH(zephyr_user)) || \
 	!DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
 #error "No suitable devicetree overlay specified"
@@ -70,7 +74,6 @@ static inline int pwm_motor_write(const struct pwm_motor *motor, uint32_t pulse_
 		pulse_width = motor->max_pulse;
 	
 	int ret = pwm_set_pulse_dt(&(motor->dev_spec), pulse_width);
-
 	return ret;
 }
 
@@ -111,7 +114,7 @@ int main(void)
 	int err;
 	uint32_t count = 0;
 	uint16_t buf;
-	uint32_t pulse = 1500;
+	uint32_t pulse = 150000;
 	enum direction dir = UP;
 	struct adc_sequence sequence = {
 		.buffer = &buf,
@@ -148,6 +151,12 @@ int main(void)
 		printk("Error: Led not configured\n");
 		return 0;
 	}
+	pwm_motor_write(&roboclaw_1, pulse);
+	pwm_motor_write(&roboclaw_2, pulse);
+	pwm_motor_write(&servo_1, pulse);
+	pwm_motor_write(&servo_2, pulse);
+	k_sleep(K_SECONDS(10));
+
 	while (1) {
 		printk("ADC reading[%u]:\n", count++);
 		for (size_t i = 0U; i < ARRAY_SIZE(adc_channels); i++) {
@@ -193,13 +202,13 @@ int main(void)
 			err += pwm_motor_write(&servo_2, pulse);
 			if (err < 0)
 			{
-				printk("Error failed to set pulse width\n");
+				printk("Error: %d failed to set pulse width\n", err);
 				return 0;
 			}
 
-			pulse += 50;
+			pulse += 29000;
 
-			if (pulse >= 2000)
+			if (pulse >= 295000)
 				dir = DOWN;
 			gpio_pin_toggle_dt(&led);
 			k_sleep(K_SECONDS(1));
@@ -213,13 +222,13 @@ int main(void)
 
 			if (err < 0)
 			{
-				printk("Error failed to set pulse width\n");
+				printk("Error: %d failed to set pulse width\n", err);
 				return 0;
 			}
 
-			pulse -= 50;
+			pulse -= 29000;
 
-			if (pulse <= 1000)
+			if (pulse <= 5000)
 				dir = UP;
 			gpio_pin_toggle_dt(&led);
 			k_sleep(K_SECONDS(1));
