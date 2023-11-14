@@ -32,5 +32,5 @@ source zephyr/zephyr-env.sh
 
 If everything is installed successfully then it should build the working src/main.c without any errors
 ```
-west build -p always -o=-j4 -b blackpill_f401cc kyvernitis
+west build -p always -o=-j4 -b blackpill_f401cc kyvernitis/bio-arm
 ```
