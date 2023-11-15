@@ -8,6 +8,8 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 
+#include <app_version.h>
+
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
@@ -111,6 +113,7 @@ enum direction {
 
 int main(void)
 {
+	printk("Bio-arm: v%s", APP_VERSION_STRING);
 	int err;
 	uint32_t count = 0;
 	uint16_t buf;
