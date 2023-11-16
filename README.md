@@ -72,3 +72,9 @@ If everything is installed successfully then it should build any working sub-sys
 ```
 west build -p always -o=-j4 -b blackpill_f401cc kyvernitis/bio-arm
 ```
+
+## Helpers
+To view init sequence of the application you built, run
+```
+west build -d build -t initlevels
+```
