@@ -1,5 +1,7 @@
 import pygame
+import serial
 
+ser = serial.Serial('/dev/ttyUSB0', baudrate= 11500)
 pygame.init()
 
 
@@ -147,8 +149,9 @@ def main():
             KEY = cmd_lst[0][i]
             VAL = cmd_lst[1][i]
             cmd = "{}: {} \r\n".format(KEY, VAL)
-            print(count, cmd, sep= "\t")
-
+            #print(count, cmd, sep= "\t")
+            encoded_data = bytes(cmd, 'utf-8')
+            ser.write(encoded_data)
 
 if __name__ == "__main__":
     main()
