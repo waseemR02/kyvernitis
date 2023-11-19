@@ -117,7 +117,7 @@ int main(void)
 	int err;
 	uint32_t count = 0;
 	uint16_t buf;
-	uint32_t pulse = 150000;
+	uint32_t pulse = 15200000;
 	enum direction dir = UP;
 	struct adc_sequence sequence = {
 		.buffer = &buf,
@@ -209,9 +209,9 @@ int main(void)
 				return 0;
 			}
 
-			pulse += 29000;
+			pulse += 1000000 ;
 
-			if (pulse >= 295000)
+			if (pulse >= 19200000)
 				dir = DOWN;
 			gpio_pin_toggle_dt(&led);
 			k_sleep(K_SECONDS(1));
@@ -229,9 +229,9 @@ int main(void)
 				return 0;
 			}
 
-			pulse -= 29000;
+			pulse -= 1000000;
 
-			if (pulse <= 5000)
+			if (pulse <= 11200000)
 				dir = UP;
 			gpio_pin_toggle_dt(&led);
 			k_sleep(K_SECONDS(1));
