@@ -3,7 +3,7 @@ name: Build with Clang/LLVM
 on: workflow_dispatch
 
 jobs:
-  build:
+  Clang-Build:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/zephyrproject-rtos/ci:v0.26.6
@@ -26,4 +26,17 @@ jobs:
       - name: Environment Setup
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          git config --global safe.directory '*'
           git rebase origin/main
+          git log  --pretty=oneline | head -n 10
+          west init -l . || true
+          west config --global update.narrow true
+          west update
+
+
+      - name: Check Environment
+        run: |
+          cmake --version
+          ${LLVM_TOOLCHAIN_PATH}/bin/clang --version
+          gcc --version
+          ls -la
