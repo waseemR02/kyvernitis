@@ -1,6 +1,6 @@
 name: Build with Clang/LLVM
 
-on: workflow_dispatch
+on: [pull_request, workflow_dispatch]
 
 jobs:
   Clang-Build:
