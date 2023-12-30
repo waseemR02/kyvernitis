@@ -43,7 +43,7 @@ jobs:
           ls -la
           ls -la kyvernitis
           
-      - name: build Bio arm application
+      - name: Build Bio-arm application
         working-directory: ${{github.workspace}}/..
         run: west build -p always -o=-j2 -b blackpill_f401cc kyvernitis/bio-arm
           
