@@ -1,6 +1,6 @@
 name: Build with Clang/LLVM
 
-on: [push, pull_request, workflow_dispatch]
+on: workflow_dispatch
 
 jobs:
   build:
@@ -27,15 +27,3 @@ jobs:
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           git rebase origin/main
-          git log  --pretty=oneline | head -n 10
-          west init -l . || true
-          west config --global update.narrow true
-          west update
-
-
-      - name: Check Environment
-        run: |
-          cmake --version
-          ${LLVM_TOOLCHAIN_PATH}/bin/clang --version
-          gcc --version
-          ls -la
