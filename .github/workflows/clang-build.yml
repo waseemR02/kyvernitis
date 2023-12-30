@@ -1,0 +1,41 @@
+name: Build with Clang/LLVM
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/zephyrproject-rtos/ci:v0.26.6
+      options: '--entrypoint /bin/bash'
+    env:
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.4
+      LLVM_TOOLCHAIN_PATH: /usr/lib/llvm-16
+
+    steps:
+      - name: Clone kyvernitis repository
+        run: |
+          git clone https://github.com/waseemR02/kyvernitis.git 
+      
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+
+      - name: Environment Setup
+        run: |
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          git rebase origin/main
+          git log  --pretty=oneline | head -n 10
+          west init -l . || true
+          west config --global update.narrow true
+          west update
+
+
+      - name: Check Environment
+        run: |
+          cmake --version
+          ${LLVM_TOOLCHAIN_PATH}/bin/clang --version
+          gcc --version
+          ls -la
