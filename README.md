@@ -23,10 +23,15 @@ kyvernitis-ws/
 │    │   └── bindings
 │    │       └── pwm-motors.yaml
 │    │       └── ...
+│    ├── kyvernitis.c
+│    ├── kyvernitis.h
+│    ├── LICENSE
 │    ├── README.md
 │    ├── west.yml
 │    └── zephyr
-│        └── module.yml               
+│        └── module.yml
+│        └── Kconfig
+│        └── CMakeLists.txt          
 │                                   
 ├── modules/
 │   └── lib/
