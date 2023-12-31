@@ -1,3 +1,7 @@
+/*
+ * Source file for Bio Arm Application
+ */
+
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
@@ -7,10 +11,11 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
-
+#include <zephyr/logging/log.h>
 #include <app_version.h>
 
-#include <zephyr/logging/log.h>
+#include <kycan.h>
+#include <kyvernitis.h>
 
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -31,12 +36,6 @@ static const struct adc_dt_spec adc_channels[] = {
 };
 
 static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
-
-struct pwm_motor {
-	const struct pwm_dt_spec dev_spec;
-	const uint32_t min_pulse;
-	const uint32_t max_pulse;
-};
 
 static const struct pwm_motor roboclaw_1 = {
 	
@@ -63,6 +62,31 @@ static const struct pwm_motor servo_2 = {
 	.max_pulse = DT_PROP(DT_ALIAS(pwm_servo2), max_pulse)
 };
 
+struct pwm_motor roboclaw[MAX_ROBOCLAWS] = {
+	{
+		.dev_spec = PWM_DT_SPEC_GET(DT_ALIAS(pwm_motor1)),
+		.min_pulse = DT_PROP(DT_ALIAS(pwm_motor1), min_pulse),
+		.max_pulse = DT_PROP(DT_ALIAS(pwm_motor1), max_pulse)
+	},
+	{
+		.dev_spec = PWM_DT_SPEC_GET(DT_ALIAS(pwm_motor2)),
+		.min_pulse = DT_PROP(DT_ALIAS(pwm_motor2), min_pulse),
+		.max_pulse = DT_PROP(DT_ALIAS(pwm_motor2), max_pulse)
+	}
+};
+
+struct pwm_motor servo[MAX_SERVOS] = {
+	{
+		.dev_spec = PWM_DT_SPEC_GET(DT_ALIAS(pwm_servo1)),
+		.min_pulse = DT_PROP(DT_ALIAS(pwm_servo1), min_pulse),
+		.max_pulse = DT_PROP(DT_ALIAS(pwm_servo1), max_pulse)
+	},
+	{
+		.dev_spec = PWM_DT_SPEC_GET(DT_ALIAS(pwm_servo2)),
+		.min_pulse = DT_PROP(DT_ALIAS(pwm_servo2), min_pulse),
+		.max_pulse = DT_PROP(DT_ALIAS(pwm_servo2), max_pulse)
+	}
+};
 
 // Wrapper around pwm_set_pulse_dt to ensure that pulse_width
 // remains under max-min range
