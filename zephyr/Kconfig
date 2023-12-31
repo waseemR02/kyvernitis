@@ -1,0 +1,4 @@
+config KYVERNITIS
+	bool "Enable kyvernitis"
+	help
+	  This option enables kyvernitis as a Zephyr module.
