@@ -157,6 +157,7 @@ void tx_thread(void *unused1, void *unused2, void *unused3)
 				printk(" = %"PRId32" mV\n", val_mv);
 			}
 		}
+		gpio_pin_toggle_dt(&led);
 		k_sleep(K_SECONDS(1));
 	}
 
