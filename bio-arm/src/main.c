@@ -81,18 +81,17 @@ const struct can_filter bio_arm_filter = {
 	.mask = CAN_EXT_ID_MASK
 };
 
-const struct can_frame bio_arm_rx_frame = {
+struct can_frame bio_arm_rx_frame = {
 	.flags = CAN_FRAME_IDE,
 	.id = BIO_ARM_ID,
 	/* dlc = 4(one uint32 to account for largest pwm pulse width) 
 			+ 1(one uint8 to address different motor) */
-	.dlc = 5
 };
 
-const struct can_frame bio_arm_tx_frame = {
+struct can_frame bio_arm_tx_frame = {
 	.flags = CAN_FRAME_IDE,
 	.id = BIO_ARM_ID,
-	.dlc = 4 // TODO: Decide on the sensor format
+	//.dlc = 4 // TODO: Decide on the sensor format
 };
 
 
@@ -134,7 +133,10 @@ int main(void)
 		/* buffer size in bytes, not number of samples */
 		.buffer_size = sizeof(buf),
 	};
-	
+
+	ARG_UNUSED(count);
+	ARG_UNUSED(sequence);
+	ARG_UNUSED(pulse);
 	/* Device ready checks*/
 
 	if (!device_is_ready(can_dev)) {
@@ -183,5 +185,37 @@ int main(void)
 		return 0;
 	}
 
+	int filter_id = can_add_rx_filter_msgq(can_dev, &rx_msgq, &bio_arm_filter);
+	if (filter_id < 0)
+	{
+		LOG_ERR("Unable to add rx msgq [%d]", filter_id);
+		return 0;
+	}
+
+	while (true)
+	{
+		k_msgq_get(&rx_msgq, &bio_arm_rx_frame, K_FOREVER);
+
+		struct can_frame frame = bio_arm_rx_frame;
+
+		if(frame.dlc != 5)
+		{
+			//just handling motor commands for now
+			LOG_ERR("Unknown Frame Received\n");
+			continue;
+		}
+		if (frame.data[4] < ROBOCLAW_BASE_ID + ROBOCLAWS_COUNT)
+		{
+			// in the case it will only consider from 10 - 11
+			pwm_motor_write(&roboclaw[frame.data[4] - ROBOCLAW_BASE_ID], frame.data_32[0]);
+		}
+		else if (frame.data[4] < SERVO_BASE_ID + SERVOS_COUNT)
+		{
+			// it will consider from 15 - 19
+			pwm_motor_write(&servo[frame.data[4] - SERVO_BASE_ID], frame.data_32[0]);
+		}
+		else continue;
+	}
+	
 	return 0;
 }
