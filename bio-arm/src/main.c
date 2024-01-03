@@ -20,8 +20,11 @@
 
 #define ROBOCLAWS_COUNT 2
 #define SERVOS_COUNT 2
+#define TX_THREAD_STACK_SIZE 512
+#define TX_THREAD_PRIORITY 2
 
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
+K_THREAD_STACK_DEFINE(tx_thread_stack, TX_THREAD_STACK_SIZE);
 CAN_MSGQ_DEFINE(rx_msgq, 10);
 
 #if !DT_NODE_EXISTS(DT_PATH(zephyr_user)) || \
@@ -99,8 +102,64 @@ struct can_frame bio_arm_tx_frame = {
  * Transfer thread
  * 
  */
-void tx_thread()
+
+struct k_thread tx_thread_data;
+
+void tx_thread(void *unused1, void *unused2, void *unused3)
 {
+	ARG_UNUSED(unused1);
+	ARG_UNUSED(unused2);
+	ARG_UNUSED(unused3);
+
+	int err;
+	uint16_t buf;
+	struct adc_sequence sequence = {
+		.buffer = &buf,
+		/* buffer size in bytes, not number of samples */
+		.buffer_size = sizeof(buf),
+	};
+
+
+	while (1) {
+		LOG_INF("ADC reading:\n");
+		for (size_t i = 0U; i < ARRAY_SIZE(adc_channels); i++) {
+			int32_t val_mv;
+
+			printk("- %s, channel %d: ",
+			       adc_channels[i].dev->name,
+			       adc_channels[i].channel_id);
+
+			(void)adc_sequence_init_dt(&adc_channels[i], &sequence);
+
+			err = adc_read_dt(&adc_channels[i], &sequence);
+			if (err < 0) {
+				printk("Could not read (%d)\n", err);
+				continue;
+			}
+
+			/*
+			 * If using differential mode, the 16 bit value
+			 * in the ADC sample buffer should be a signed 2's
+			 * complement value.
+			 */
+			if (adc_channels[i].channel_cfg.differential) {
+				val_mv = (int32_t)((int16_t)buf);
+			} else {
+				val_mv = (int32_t)buf;
+			}
+			printk("%"PRId32, val_mv);
+			err = adc_raw_to_millivolts_dt(&adc_channels[i],
+						       &val_mv);
+			/* conversion to mV may not be supported, skip if not */
+			if (err < 0) {
+				printk(" (value in mV not available)\n");
+			} else {
+				printk(" = %"PRId32" mV\n", val_mv);
+			}
+		}
+		k_sleep(K_SECONDS(1));
+	}
+
 	return;
 }
 
@@ -123,19 +182,12 @@ static inline int pwm_motor_write(const struct pwm_motor *motor, uint32_t pulse_
 int main(void)
 {
 	printk("Bio-arm: v%s", APP_VERSION_STRING);
-	
-	int err;
-	uint32_t count = 0;
-	uint16_t buf;
-	uint32_t pulse = 15200000;
-	struct adc_sequence sequence = {
-		.buffer = &buf,
-		/* buffer size in bytes, not number of samples */
-		.buffer_size = sizeof(buf),
-	};
 
-	ARG_UNUSED(count);
-	ARG_UNUSED(sequence);
+	int err;
+	k_tid_t tx_tid;
+	uint32_t pulse = 15200000;
+
+
 	ARG_UNUSED(pulse);
 	/* Device ready checks*/
 
@@ -183,6 +235,15 @@ int main(void)
 	{
 		LOG_ERR("Error: Led not configured\n");
 		return 0;
+	}
+
+	tx_tid = k_thread_create(&tx_thread_data, tx_thread_stack,
+				 K_THREAD_STACK_SIZEOF(tx_thread_stack),
+				 tx_thread, NULL, NULL, NULL,
+				 TX_THREAD_PRIORITY, 0, K_NO_WAIT);
+
+	if (!tx_tid) {
+		LOG_ERR("ERROR spawning tx thread\n");
 	}
 
 	int filter_id = can_add_rx_filter_msgq(can_dev, &rx_msgq, &bio_arm_filter);
