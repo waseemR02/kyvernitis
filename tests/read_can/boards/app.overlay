@@ -1,6 +1,6 @@
-/ {
+/{
 	chosen {
-		zephyr, canbus = &mcp2515_can_bus;
+		zephyr,canbus = &mcp2515_can_bus;
 	};
 };
 
