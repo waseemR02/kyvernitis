@@ -84,12 +84,7 @@ const struct can_filter bio_arm_filter = {
 	.mask = CAN_EXT_ID_MASK
 };
 
-struct can_frame bio_arm_rx_frame = {
-	.flags = CAN_FRAME_IDE,
-	.id = BIO_ARM_ID,
-	/* dlc = 4(one uint32 to account for largest pwm pulse width) 
-			+ 1(one uint8 to address different motor) */
-};
+struct can_frame bio_arm_rx_frame;
 
 struct can_frame bio_arm_tx_frame = {
 	.flags = CAN_FRAME_IDE,
@@ -155,7 +150,11 @@ void tx_thread(void *unused1, void *unused2, void *unused3)
 				printk(" (value in mV not available)\n");
 			} else {
 				printk(" = %"PRId32" mV\n", val_mv);
+				bio_arm_tx_frame.dlc = 5;
+				bio_arm_tx_frame.data_32[0] = val_mv;
+				bio_arm_tx_frame.data[4] = i;
 			}
+			can_send(can_dev, &bio_arm_tx_frame, K_MSEC(100), NULL, NULL);
 		}
 		gpio_pin_toggle_dt(&led);
 		k_sleep(K_SECONDS(1));
