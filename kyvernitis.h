@@ -17,3 +17,11 @@ struct pwm_motor {
 // remains under max-min range
 int pwm_motor_write(const struct pwm_motor *motor, uint32_t pulse_width);
 
+float MQ2_readings(int mv);
+
+float MQ7_readings(int mv);
+
+float MQ136_readings(int mv);
+
+float MQ137_readings(int mv);
+
