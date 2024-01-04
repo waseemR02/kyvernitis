@@ -107,6 +107,7 @@ void tx_thread(void *unused1, void *unused2, void *unused3)
 	ARG_UNUSED(unused3);
 
 	int err;
+	float val;
 	uint16_t buf;
 	struct adc_sequence sequence = {
 		.buffer = &buf,
@@ -149,9 +150,20 @@ void tx_thread(void *unused1, void *unused2, void *unused3)
 			if (err < 0) {
 				printk(" (value in mV not available)\n");
 			} else {
-				printk(" = %"PRId32" mV\n", val_mv);
+				if (i == 0) {
+                                        val = MQ136_readings(val_mv);
+                                } else if (i == 1) {
+                                        val = MQ2_readings(val_mv);
+                                } else if (i == 2) {
+                                        continue; // DHT11_function not defined yet !
+                                } else if (i == 8) {
+                                        val = MQ7_readings(val_mv);
+                                } else {
+                                        printk("NOT IN USE\t");
+				}
+				printk(" = %"PRId32" mV\n", (int32_t)val);
 				bio_arm_tx_frame.dlc = 5;
-				bio_arm_tx_frame.data_32[0] = val_mv;
+				bio_arm_tx_frame.data_32[0] = (int32_t)val;
 				bio_arm_tx_frame.data[4] = i;
 			}
 			can_send(can_dev, &bio_arm_tx_frame, K_MSEC(100), NULL, NULL);
