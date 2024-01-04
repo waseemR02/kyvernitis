@@ -12,3 +12,8 @@ struct pwm_motor {
 	const uint32_t min_pulse;
 	const uint32_t max_pulse;
 };
+
+// Wrapper around pwm_set_pulse_dt to ensure that pulse_width
+// remains under max-min range
+int pwm_motor_write(const struct pwm_motor *motor, uint32_t pulse_width);
+
