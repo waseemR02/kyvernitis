@@ -46,6 +46,11 @@ int main()
 		return 0;
 	}
 	
+	if (can_start(can_dev)) {
+		LOG_ERR("Error starting CAN controller.\n");
+		return 0;
+	}
+
 	filter_id = can_add_rx_filter(can_dev, rx_callback, NULL, &ex_frame);
 	if (filter_id < 0) {
 		LOG_ERR("Unable to add rx filter [%d]", filter_id);
