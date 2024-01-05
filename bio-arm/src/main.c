@@ -243,7 +243,7 @@ int main(void)
 		return 0;
 	}
 #endif
-	if (!can_start(can_dev)) {
+	if (can_start(can_dev)) {
 		LOG_ERR("Error starting CAN controller.\n");
 		return 0;
 	}
