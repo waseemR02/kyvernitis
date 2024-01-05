@@ -13,6 +13,7 @@
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(can_read_test , CONFIG_LOG_DEFAULT_LEVEL);
+CAN_MSGQ_DEFINE(rx_msgq, 10);
 
 /* DT spec for led*/
 static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
@@ -24,23 +25,28 @@ const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 /*
  * Can filter to read all frames with extended IDs
  */ 
-const struct can_filter ex_frame = {
+const struct can_filter ex_filter = {
 	.flags = CAN_FILTER_DATA | CAN_FILTER_IDE,
-	.id = 0,
-	.mask = CAN_EXT_ID_MASK
 };
 
 struct can_frame rx_frame;
 
-void rx_callback(const struct device *dev, struct can_frame *frame, void *unused)
-{
-	gpio_pin_toggle_dt(&led);
-}
-
 int main()
 {
 	int filter_id;
+	
+	if (!gpio_is_ready_dt(&led))
+	{
+		LOG_ERR("Error: Led not ready\n");
+		return 0;
+	}
 
+	if (gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE) < 0)
+	{
+		LOG_ERR("Error: Led not configured\n");
+		return 0;
+	}
+	
 	if (!device_is_ready(can_dev)) {
 		LOG_INF("CAN: Device %s not ready.\n", can_dev->name);
 		return 0;
@@ -51,10 +57,23 @@ int main()
 		return 0;
 	}
 
-	filter_id = can_add_rx_filter(can_dev, rx_callback, NULL, &ex_frame);
-	if (filter_id < 0) {
-		LOG_ERR("Unable to add rx filter [%d]", filter_id);
+	filter_id = can_add_rx_filter_msgq(can_dev, &rx_msgq, &ex_filter);
+	if (filter_id < 0)
+	{
+		LOG_ERR("Unable to add rx msgq [%d]", filter_id);
+		return 0;
 	}
 
+	while (true)
+	{
+		k_msgq_get(&rx_msgq, &rx_frame, K_FOREVER);
+
+		printk("Frame recieved\n");
+		printk("Frame ID: %d\n", rx_frame.id);
+		printk("Message Type: %d\n", rx_frame.data[4]);
+		printk("Rest of the data: %d: %d\n\n", rx_frame.data[5], rx_frame.data_32[0]);
+
+		gpio_pin_toggle_dt(&led);
+	}
 	return 0;
 }
