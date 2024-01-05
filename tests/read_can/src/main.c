@@ -35,18 +35,6 @@ int main()
 {
 	int filter_id;
 	
-	if (!gpio_is_ready_dt(&led))
-	{
-		LOG_ERR("Error: Led not ready\n");
-		return 0;
-	}
-
-	if (gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE) < 0)
-	{
-		LOG_ERR("Error: Led not configured\n");
-		return 0;
-	}
-	
 	if (!device_is_ready(can_dev)) {
 		LOG_INF("CAN: Device %s not ready.\n", can_dev->name);
 		return 0;
@@ -64,6 +52,18 @@ int main()
 		return 0;
 	}
 
+	if (!gpio_is_ready_dt(&led))
+	{
+		LOG_ERR("Error: Led not ready\n");
+		return 0;
+	}
+
+	if (gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE) < 0)
+	{
+		LOG_ERR("Error: Led not configured\n");
+		return 0;
+	}
+
 	while (true)
 	{
 		k_msgq_get(&rx_msgq, &rx_frame, K_FOREVER);
@@ -72,8 +72,6 @@ int main()
 		printk("Frame ID: %d\n", rx_frame.id);
 		printk("Message Type: %d\n", rx_frame.data[4]);
 		printk("Rest of the data: %d: %d\n\n", rx_frame.data[5], rx_frame.data_32[0]);
-
-		gpio_pin_toggle_dt(&led);
 	}
 	return 0;
 }
