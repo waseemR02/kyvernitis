@@ -1,0 +1,10 @@
+mainmenu "Controller Area Network sample application"
+
+config LOOPBACK_MODE
+	bool "Loopback LOOPBACK_MODE"
+	default y
+	help
+	  Set the controller to loopback mode.
+	  This allows testing without a second board.
+
+source "Kconfig.zephyr"
