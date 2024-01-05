@@ -46,7 +46,7 @@ jobs:
       - name: Build Bio-arm application
         working-directory: ${{github.workspace}}/..
         run: west build -p always -o=-j2 -b blackpill_f401cc kyvernitis/bio-arm
-          
-      
-      
-    
+
+      - name: Build tests/read_can
+        working-directory: ${{github.workspace}}/..
+        run: west build -p always -o=-j2 -b blackpill_f401cc kyvernitis/tests/read_can      

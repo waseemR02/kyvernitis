@@ -1,0 +1,25 @@
+/{
+	chosen {
+		zephyr,canbus = &mcp2515_can_bus;
+	};
+};
+
+&spi1 {
+	status = "okay";
+	cs-gpios = <&gpiob 12 GPIO_ACTIVE_LOW>;	
+	mcp2515_can_bus: can@0 {
+		compatible = "microchip,mcp2515";
+		spi-max-frequency = <1000000>;
+		int-gpios = <&gpiob 9 GPIO_ACTIVE_LOW>; /* B9 */
+		status = "okay";
+		reg = <0x0>;
+		osc-freq = <8000000>;
+		bus-speed = <125000>;
+		sjw = <1>;
+		sample-point = <875>;
+
+		can-transceiver {
+			max-bitrate = <1000000>;
+		};
+	};
+};
