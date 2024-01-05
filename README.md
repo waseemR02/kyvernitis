@@ -25,6 +25,12 @@ kyvernitis-ws/
 │    │       └── ...
 │    ├── kyvernitis.c
 │    ├── kyvernitis.h
+│    ├── scripts
+│    │    ├── ...
+│    │
+│    ├── tests
+│    │    ├── ... 
+│    │
 │    ├── LICENSE
 │    ├── README.md
 │    ├── west.yml
