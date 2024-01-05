@@ -235,6 +235,25 @@ int main(void)
 		LOG_ERR("Error: Led not configured\n");
 		return 0;
 	}
+	
+#ifdef CONFIG_LOOPBACK_MODE
+	ret = can_set_mode(can_dev, CAN_MODE_LOOPBACK);
+	if (ret != 0) {
+		LOG_ERR("Error setting CAN mode [%d]", ret);
+		return 0;
+	}
+#endif
+	if (!can_start(can_dev)) {
+		LOG_ERR("Error starting CAN controller.\n");
+		return 0;
+	}
+
+	int filter_id = can_add_rx_filter_msgq(can_dev, &rx_msgq, &bio_arm_filter);
+	if (filter_id < 0)
+	{
+		LOG_ERR("Unable to add rx msgq [%d]", filter_id);
+		return 0;
+	}
 
 	tx_tid = k_thread_create(&tx_thread_data, tx_thread_stack,
 				 K_THREAD_STACK_SIZEOF(tx_thread_stack),
@@ -243,13 +262,6 @@ int main(void)
 
 	if (!tx_tid) {
 		LOG_ERR("ERROR spawning tx thread\n");
-	}
-
-	int filter_id = can_add_rx_filter_msgq(can_dev, &rx_msgq, &bio_arm_filter);
-	if (filter_id < 0)
-	{
-		LOG_ERR("Unable to add rx msgq [%d]", filter_id);
-		return 0;
 	}
 
 	while (true)
