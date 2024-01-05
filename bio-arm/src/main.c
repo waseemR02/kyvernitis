@@ -162,9 +162,10 @@ void tx_thread(void *unused1, void *unused2, void *unused3)
                                         printk("NOT IN USE\t");
 				}
 				printk(" = %"PRId32" mV\n", (int32_t)val);
-				bio_arm_tx_frame.dlc = 5;
-				bio_arm_tx_frame.data_32[0] = (int32_t)val;
-				bio_arm_tx_frame.data[4] = i;
+				bio_arm_tx_frame.dlc = 6;
+				bio_arm_tx_frame.data_32[0] = (uint32_t)val;
+				bio_arm_tx_frame.data[5] = (uint8_t)i;
+				bio_arm_tx_frame.data[4] = SENSOR_DATA_ID;
 			}
 			can_send(can_dev, &bio_arm_tx_frame, K_MSEC(100), NULL, NULL);
 		}
@@ -237,9 +238,8 @@ int main(void)
 	}
 	
 #ifdef CONFIG_LOOPBACK_MODE
-	ret = can_set_mode(can_dev, CAN_MODE_LOOPBACK);
-	if (ret != 0) {
-		LOG_ERR("Error setting CAN mode [%d]", ret);
+	if (can_set_mode(can_dev, CAN_MODE_LOOPBACK)) {
+		LOG_ERR("Error setting CAN mode");
 		return 0;
 	}
 #endif
@@ -269,25 +269,32 @@ int main(void)
 		k_msgq_get(&rx_msgq, &bio_arm_rx_frame, K_FOREVER);
 
 		struct can_frame frame = bio_arm_rx_frame;
-
-		if(frame.dlc != 5)
+		if(frame.dlc != 6)
 		{
 			//just handling motor commands for now
 			LOG_ERR("Unknown Frame Received\n");
 			continue;
 		}
-		if (frame.data[4] < ROBOCLAW_BASE_ID + ROBOCLAWS_COUNT)
-		{
-			// in the case it will only consider from 10 - 11
-			pwm_motor_write(&roboclaw[frame.data[4] - ROBOCLAW_BASE_ID], frame.data_32[0]);
+
+		switch (frame.data[4]) {
+		
+		case ACTUATOR_COMMAND_ID:
+			if (frame.data[4] < ROBOCLAW_BASE_ID + ROBOCLAWS_COUNT)
+			{
+				// in the case it will only consider from 10 - 11
+				pwm_motor_write(&roboclaw[frame.data[4] - ROBOCLAW_BASE_ID], frame.data_32[0]);
+			}
+			else if (frame.data[4] < SERVO_BASE_ID + SERVOS_COUNT)
+			{
+				// it will consider from 15 - 19
+				pwm_motor_write(&servo[frame.data[4] - SERVO_BASE_ID], frame.data_32[0]);
+			}
+			break;
+		
+		case SENSOR_DATA_ID:
+			LOG_INF("Recieved sensor data\n");
+			break;
 		}
-		else if (frame.data[4] < SERVO_BASE_ID + SERVOS_COUNT)
-		{
-			// it will consider from 15 - 19
-			pwm_motor_write(&servo[frame.data[4] - SERVO_BASE_ID], frame.data_32[0]);
-		}
-		else continue;
 	}
-	
 	return 0;
 }
