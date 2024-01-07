@@ -1,7 +1,43 @@
 / {
+	dcmotors {
+		compatible = "dc-motors";
+		dc_motor_1: motor_1 {
+			inputs = <&gpioc 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+
+		};
+	};
+
+		// dc_motor_2: motor_2 {
+		// 	inputs = <&gpiob 4 GPIO_ACTIVE_LOW>,
+		// 		 <&gpioa 1 GPIO_ACTIVE_LOW>;
+		// };
+		// dc_motor_3: motor_3 {
+		// 	inputs = <&gpiob 10 GPIO_ACTIVE_LOW>,
+		// 	         <&gpioa 3 GPIO_ACTIVE_LOW>;
+		// };
+		// dc_motor_4: motor_4 {
+		// 	inputs = <&gpioa 2 GPIO_ACTIVE_LOW>,
+		// 	 	 <&gpioa 10 GPIO_ACTIVE_LOW>;
+		// };
+
+	//};
+
+
+	// 	motor-2 = &dc_motor_2;
+	// 	motor-3 = &dc_motor_3;
+	// 	motor-4 = &dc_motor_4;
+//	};
+	
 	chosen {
 		zephyr,canbus = &mcp2515_can_bus;
 	};
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+	pinctrl-names= "default";
+	status = "okay";
+	current-speed = <115200>;
 };
 
 &spi1 {
