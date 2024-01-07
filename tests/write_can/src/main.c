@@ -7,18 +7,21 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
-
+#include <zephyr/drivers/can.h>
 #include <string.h>
 
 /* change this to any other UART peripheral if desired */
 #define UART_DEVICE_NODE DT_CHOSEN(zephyr_shell_uart)
 
-#define MSG_SIZE 32
+#define MSG_SIZE 100
 
 /* queue to store up to 10 messages (aligned to 4-byte boundary) */
 K_MSGQ_DEFINE(uart_msgq, MSG_SIZE, 10, 4);
 
 static const struct device *const uart_dev = DEVICE_DT_GET(UART_DEVICE_NODE);
+
+/* DT spec for can module*/
+const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 
 /* receive buffer used in UART ISR callback */
 static char rx_buf[MSG_SIZE];
@@ -70,9 +73,74 @@ void print_uart(char *buf)
 	}
 }
 
+void parse_message(char *buffer, uint32_t *msgid, uint8_t *cmd_type, uint32_t *cmd, uint8_t *num) {
+    char *start = buffer;
+    char *end = buffer;
+
+    // Parse msgid
+    while (*end != ',' && *end != '\0') {
+        end++;
+    }
+    if (*end == ',') {
+        *end = '\0';
+        *msgid = 0;
+        while (*start >= '0' && *start <= '9') {
+            *msgid = (*msgid * 10) + (*start - '0');
+            start++;
+        }
+        start = end + 1;
+        end = start;
+    }
+
+    // Parse cmd_type
+    while (*end != ',' && *end != '\0') {
+        end++;
+    }
+    if (*end == ',') {
+        *end = '\0';
+        *cmd_type = 0;
+        while (*start >= '0' && *start <= '9') {
+            *cmd_type = (*cmd_type * 10) + (*start - '0');
+            start++;
+        }
+        start = end + 1;
+        end = start;
+    }
+
+    // Parse cmd
+    while (*end != ',' && *end != '\0') {
+        end++;
+    }
+    if (*end == ',') {
+        *end = '\0';
+        *cmd = 0;
+        while (*start >= '0' && *start <= '9') {
+            *cmd = (*cmd * 10) + (*start - '0');
+            start++;
+        }
+        start = end + 1;
+        end = start;
+    }
+
+    // Parse num
+    *num = 0;
+    while (*start >= '0' && *start <= '9') {
+        *num = (*num * 10) + (*start - '0');
+        start++;
+    }
+}
+
+
+
 int main(void)
 {
-	char tx_buf[MSG_SIZE];
+	char rx_msg[MSG_SIZE];
+	uint32_t msg_id;
+	uint8_t cmd_type;
+	uint32_t cmd;
+	uint8_t num;
+	
+	struct can_frame tx_frame;
 
 	if (!device_is_ready(uart_dev)) {
 		printk("UART device not found!");
@@ -81,6 +149,10 @@ int main(void)
 
 	/* configure interrupt and callback to receive data */
 	int ret = uart_irq_callback_user_data_set(uart_dev, serial_cb, NULL);
+	
+	if (can_start(can_dev)) {
+		return 0;
+	}
 
 	if (ret < 0) {
 		if (ret == -ENOTSUP) {
@@ -98,9 +170,19 @@ int main(void)
 	print_uart("Tell me something and press enter:\r\n");
 
 	/* indefinitely wait for input from the user */
-	while (k_msgq_get(&uart_msgq, &tx_buf, K_FOREVER) == 0) {
-		print_uart("Echo: ");
-		print_uart(tx_buf);
+	while (k_msgq_get(&uart_msgq, &rx_msg, K_FOREVER) == 0) {
+		parse_message(rx_msg, &msg_id, &cmd_type, &cmd, &num);
+		
+		tx_frame.id = msg_id;
+		tx_frame.dlc = 6;
+		tx_frame.data_32[0] = cmd;
+		tx_frame.data[4] = cmd_type;
+		tx_frame.data[5] = num;
+	
+		can_send(can_dev, &tx_frame, K_MSEC(100), NULL, NULL);
+		
+		print_uart("Sent: ");
+		print_uart(rx_msg);
 		print_uart("\r\n");
 	}
 	return 0;
