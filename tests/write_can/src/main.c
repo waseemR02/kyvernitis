@@ -45,7 +45,8 @@ void serial_cb(const struct device *dev, void *user_data)
 
 	/* read until FIFO empty */
 	while (uart_fifo_read(uart_dev, &c, 1) == 1) {
-		if ((c == '\n' || c == '\r') && rx_buf_pos > 0) {
+		if ((c == '\r') && rx_buf_pos > 0) {
+			uart_fifo_read(uart_dev, &c, 1);
 			/* terminate string */
 			rx_buf[rx_buf_pos] = '\0';
 
@@ -135,6 +136,7 @@ void parse_message(char *buffer, uint32_t *msgid, uint8_t *cmd_type, uint32_t *c
 int main(void)
 {
 	char rx_msg[MSG_SIZE];
+	char clone[MSG_SIZE];
 	uint32_t msg_id;
 	uint8_t cmd_type;
 	uint32_t cmd;
@@ -171,18 +173,19 @@ int main(void)
 
 	/* indefinitely wait for input from the user */
 	while (k_msgq_get(&uart_msgq, &rx_msg, K_FOREVER) == 0) {
+		strcpy(clone, rx_msg);
 		parse_message(rx_msg, &msg_id, &cmd_type, &cmd, &num);
-		
-		tx_frame.id = msg_id;
-		tx_frame.dlc = 6;
-		tx_frame.data_32[0] = cmd;
-		tx_frame.data[4] = cmd_type;
-		tx_frame.data[5] = num;
-	
-		can_send(can_dev, &tx_frame, K_MSEC(100), NULL, NULL);
+	// 	
+	// 	tx_frame.id = msg_id;
+	// 	tx_frame.dlc = 6;
+	// 	tx_frame.data_32[0] = cmd;
+	// 	tx_frame.data[4] = cmd_type;
+	// 	tx_frame.data[5] = num;
+	// 
+	// 	can_send(can_dev, &tx_frame, K_MSEC(100), NULL, NULL);
 		
 		print_uart("Sent: ");
-		print_uart(rx_msg);
+		print_uart(clone);
 		print_uart("\r\n");
 	}
 	return 0;
