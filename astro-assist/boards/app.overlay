@@ -3,27 +3,33 @@
 		compatible = "dc-motors";
 		dc_motor_1: motor_1 {
 			label = "Motor_1";
-			gpios = <&gpiob 8 GPIO_ACTIVE_LOW>,
-				<&gpioa 0 GPIO_ACTIVE_LOW>;
+			gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>,
+				<&gpioa 0 GPIO_ACTIVE_HIGH>;
 		};
 	
 
 		 dc_motor_2: motor_2 {
 		 	label = "Motor_2";
-		 	gpios = <&gpiob 4 GPIO_ACTIVE_LOW>,
-		 		 <&gpioa 1 GPIO_ACTIVE_LOW>;
+		 	gpios = <&gpiob 4 GPIO_ACTIVE_HIGH>,
+		 		 <&gpioa 1 GPIO_ACTIVE_HIGH>;
 		 };
 		 dc_motor_3: motor_3 {
 		 	label = "Motor_3";
-		 	gpios = <&gpiob 10 GPIO_ACTIVE_LOW>,
-		 	         <&gpioa 3 GPIO_ACTIVE_LOW>;
+		 	gpios = <&gpiob 10 GPIO_ACTIVE_HIGH>,
+		 	         <&gpioa 3 GPIO_ACTIVE_HIGH>;
 		 };
 		 dc_motor_4: motor_4 {
 		 	label = "Motor_4";
-		 	gpios = <&gpioa 2 GPIO_ACTIVE_LOW>,
-		 	 	 <&gpioa 10 GPIO_ACTIVE_LOW>;
+		 	gpios = <&gpioa 2 GPIO_ACTIVE_HIGH>,
+		 	 	 <&gpioa 10 GPIO_ACTIVE_HIGH>;
 		 };
 
+	};
+
+	limitswitches {
+		compatible = "limit-switches";
+		gpios = <&gpioa 8 GPIO_ACTIVE_LOW>,
+			<&gpioa 9 GPIO_ACTIVE_LOW>;
 	};
 
 	aliases {
