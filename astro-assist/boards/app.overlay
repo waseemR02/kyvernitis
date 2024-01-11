@@ -26,7 +26,7 @@
 
 	};
 
-	limitswitches {
+	limitswitches: limitswitches {
 		compatible = "limit-switches";
 		gpios = <&gpioa 8 GPIO_ACTIVE_LOW>,
 			<&gpioa 9 GPIO_ACTIVE_LOW>;
