@@ -2,32 +2,37 @@
 	dcmotors {
 		compatible = "dc-motors";
 		dc_motor_1: motor_1 {
-			inputs = <&gpioc 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-
+			label = "Motor_1";
+			gpios = <&gpiob 8 GPIO_ACTIVE_LOW>,
+				<&gpioa 0 GPIO_ACTIVE_LOW>;
 		};
+	
+
+		 dc_motor_2: motor_2 {
+		 	label = "Motor_2";
+		 	gpios = <&gpiob 4 GPIO_ACTIVE_LOW>,
+		 		 <&gpioa 1 GPIO_ACTIVE_LOW>;
+		 };
+		 dc_motor_3: motor_3 {
+		 	label = "Motor_3";
+		 	gpios = <&gpiob 10 GPIO_ACTIVE_LOW>,
+		 	         <&gpioa 3 GPIO_ACTIVE_LOW>;
+		 };
+		 dc_motor_4: motor_4 {
+		 	label = "Motor_4";
+		 	gpios = <&gpioa 2 GPIO_ACTIVE_LOW>,
+		 	 	 <&gpioa 10 GPIO_ACTIVE_LOW>;
+		 };
+
 	};
 
-		// dc_motor_2: motor_2 {
-		// 	inputs = <&gpiob 4 GPIO_ACTIVE_LOW>,
-		// 		 <&gpioa 1 GPIO_ACTIVE_LOW>;
-		// };
-		// dc_motor_3: motor_3 {
-		// 	inputs = <&gpiob 10 GPIO_ACTIVE_LOW>,
-		// 	         <&gpioa 3 GPIO_ACTIVE_LOW>;
-		// };
-		// dc_motor_4: motor_4 {
-		// 	inputs = <&gpioa 2 GPIO_ACTIVE_LOW>,
-		// 	 	 <&gpioa 10 GPIO_ACTIVE_LOW>;
-		// };
+	aliases {
+		motor-1 = &dc_motor_1;
+	 	motor-2 = &dc_motor_2;
+	 	motor-3 = &dc_motor_3;
+	 	motor-4 = &dc_motor_4;
+	};
 
-	//};
-
-
-	// 	motor-2 = &dc_motor_2;
-	// 	motor-3 = &dc_motor_3;
-	// 	motor-4 = &dc_motor_4;
-//	};
-	
 	chosen {
 		zephyr,canbus = &mcp2515_can_bus;
 	};
