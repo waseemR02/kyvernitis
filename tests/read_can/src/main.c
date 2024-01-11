@@ -67,11 +67,9 @@ int main()
 	while (true)
 	{
 		k_msgq_get(&rx_msgq, &rx_frame, K_FOREVER);
-
+		gpio_pin_toggle_dt(&led);
 		printk("Frame recieved\n");
 		printk("Frame ID: %d\n", rx_frame.id);
-		printk("Message Type: %d\n", rx_frame.data[4]);
-		printk("Rest of the data: %d: %d\n\n", rx_frame.data[5], rx_frame.data_32[0]);
 	}
 	return 0;
 }
