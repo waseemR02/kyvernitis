@@ -63,3 +63,70 @@ const struct can_filter astro_assist_filter = {
 struct can_frame astro_assist_rx_frame;
 
 
+
+int main()
+{
+	printk("Astro-Assist: v%s", APP_VERSION_STRING);
+
+	int err;
+
+	/* Device ready checks */
+	
+	if (!device_is_ready(can_dev)) {
+		LOG_INF("CAN: Device %s not ready.\n", can_dev->name);
+		return 0;
+	}
+
+	if (!gpio_is_ready_dt(&switch_1))
+	{
+		LOG_ERR("Error: Led not ready\n");
+		return 0;
+	}
+
+	if (!gpio_is_ready_dt(&switch_2))
+	{
+		LOG_ERR("Error: Led not ready\n");
+		return 0;
+	};
+
+	for (size_t i = 0U; i < ARRAY_SIZE(l293d); i++) {
+		if (!gpio_is_ready_dt(&(l293d[i].input_1))) {
+			LOG_ERR("DC-motor %d: input %d is not ready\n", i,
+							l293d[i].input_1.pin);
+			return 0;
+		}
+		if (!gpio_is_ready_dt(&(l293d[i].input_2))) {
+			LOG_ERR("DC-motor %d: input %d is not ready\n", i,
+							l293d[i].input_2.pin);
+			return 0;
+		}
+	}
+
+	/* Start up configurations */
+
+	err = gpio_pin_configure_dt(&switch_1, GPIO_INPUT);
+	if (err != 0) {
+		LOG_ERR("Error %d: failed to configure %s pin %d\n",
+		       err, switch_1.port->name, switch_1.pin);
+		return 0;
+	}
+
+	err = gpio_pin_configure_dt(&switch_2, GPIO_INPUT);
+	if (err != 0) {
+		LOG_ERR("Error %d: failed to configure %s pin %d\n",
+		       err, switch_2.port->name, switch_2.pin);
+		return 0;
+	}
+
+#ifdef CONFIG_LOOPBACK_MODE
+	if (can_set_mode(can_dev, CAN_MODE_LOOPBACK)) {
+		LOG_ERR("Error setting CAN mode");
+		return 0;
+	}
+#endif
+	if (can_start(can_dev)) {
+		LOG_ERR("Error starting CAN controller.\n");
+		return 0;
+	}
+	
+}
