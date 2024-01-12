@@ -156,7 +156,7 @@ int main()
 					return 0;
 				}
 			}	
-			else if (frame.data[4] < L293D_BASE_ID + L293D_COUNT) {
+			else if (frame.data[5] < L293D_BASE_ID + L293D_COUNT) {
 				// consider from 25 to 28	
 				err = dc_motor_write(&l293d[frame.data[5] - L293D_BASE_ID],
 							frame.data_32[0]);
