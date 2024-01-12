@@ -117,19 +117,14 @@ void tx_thread(void *unused1, void *unused2, void *unused3)
 
 
 	while (1) {
-		LOG_INF("ADC reading:\n");
 		for (size_t i = 0U; i < ARRAY_SIZE(adc_channels); i++) {
 			int32_t val_mv;
-
-			printk("- %s, channel %d: ",
-			       adc_channels[i].dev->name,
-			       adc_channels[i].channel_id);
 
 			(void)adc_sequence_init_dt(&adc_channels[i], &sequence);
 
 			err = adc_read_dt(&adc_channels[i], &sequence);
 			if (err < 0) {
-				printk("Could not read (%d)\n", err);
+				LOG_ERR("Could not read (%d)\n", err);
 				continue;
 			}
 
@@ -143,12 +138,11 @@ void tx_thread(void *unused1, void *unused2, void *unused3)
 			} else {
 				val_mv = (int32_t)buf;
 			}
-			printk("%"PRId32, val_mv);
 			err = adc_raw_to_millivolts_dt(&adc_channels[i],
 						       &val_mv);
 			/* conversion to mV may not be supported, skip if not */
 			if (err < 0) {
-				printk(" (value in mV not available)\n");
+				LOG_ERR(" (value in mV not available)\n");
 			} else {
 				if (i == 0) {
                                         val = MQ136_readings(val_mv);
@@ -159,15 +153,19 @@ void tx_thread(void *unused1, void *unused2, void *unused3)
                                 } else if (i == 8) {
                                         val = MQ7_readings(val_mv);
                                 } else {
-                                        printk("NOT IN USE\t");
+                                        LOG_INF("NOT IN USE\t");
 				}
-				printk(" = %"PRId32" mV\n", (int32_t)val);
+				LOG_INF("Channel:%d = %"PRId32" mV\n", i, (int32_t)val);
 				bio_arm_tx_frame.dlc = 6;
 				bio_arm_tx_frame.data_32[0] = (uint32_t)val;
 				bio_arm_tx_frame.data[5] = (uint8_t)i;
 				bio_arm_tx_frame.data[4] = SENSOR_DATA_ID;
 			}
 			can_send(can_dev, &bio_arm_tx_frame, K_MSEC(100), NULL, NULL);
+			LOG_INF("CAN frame sent: ID: %d", bio_arm_tx_frame.id);
+			LOG_INF("CAN frame data: %d %d %d", bio_arm_tx_frame.data_32[0],
+								bio_arm_tx_frame.data[4],
+								bio_arm_tx_frame.data[5]);
 		}
 		gpio_pin_toggle_dt(&led);
 		k_sleep(K_SECONDS(1));
@@ -181,7 +179,7 @@ void tx_thread(void *unused1, void *unused2, void *unused3)
 
 int main(void)
 {
-	printk("Bio-arm: v%s", APP_VERSION_STRING);
+	printk("\nBio-arm: v%s\n\n", APP_VERSION_STRING);
 
 	int err;
 	k_tid_t tx_tid;
@@ -263,6 +261,8 @@ int main(void)
 	if (!tx_tid) {
 		LOG_ERR("ERROR spawning tx thread\n");
 	}
+
+	LOG_INF("Initialization completed successfully\n");
 
 	while (true)
 	{
