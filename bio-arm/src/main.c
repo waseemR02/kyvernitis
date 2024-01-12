@@ -279,15 +279,15 @@ int main(void)
 		switch (frame.data[4]) {
 		
 		case ACTUATOR_COMMAND_ID:
-			if (frame.data[4] < ROBOCLAW_BASE_ID + ROBOCLAWS_COUNT)
+			if (frame.data[5] < ROBOCLAW_BASE_ID + ROBOCLAWS_COUNT)
 			{
 				// in the case it will only consider from 10 - 11
-				pwm_motor_write(&roboclaw[frame.data[4] - ROBOCLAW_BASE_ID], frame.data_32[0]);
+				pwm_motor_write(&roboclaw[frame.data[5] - ROBOCLAW_BASE_ID], frame.data_32[0]);
 			}
-			else if (frame.data[4] < SERVO_BASE_ID + SERVOS_COUNT)
+			else if (frame.data[5] < SERVO_BASE_ID + SERVOS_COUNT)
 			{
 				// it will consider from 15 - 19
-				pwm_motor_write(&servo[frame.data[4] - SERVO_BASE_ID], frame.data_32[0]);
+				pwm_motor_write(&servo[frame.data[5] - SERVO_BASE_ID], frame.data_32[0]);
 			}
 			break;
 		
