@@ -125,8 +125,7 @@ int main()
 	
 	
 	int filter_id = can_add_rx_filter_msgq(can_dev, &rx_msgq, &astro_assist_filter);
-	if (filter_id < 0)
-	{
+	if (filter_id < 0) {
 		LOG_ERR("Unable to add rx msgq [%d]", filter_id);
 		return 0;
 	}
@@ -138,8 +137,7 @@ int main()
 		k_msgq_get(&rx_msgq, &astro_assist_rx_frame, K_FOREVER);
 
 		struct can_frame frame = astro_assist_rx_frame;
-		if(frame.dlc != 6)
-		{
+		if(frame.dlc != 6) {
 			//just handling motor commands for now
 			LOG_ERR("Unknown Frame Received\n");
 			continue;
@@ -148,26 +146,22 @@ int main()
 		switch (frame.data[4]) {
 		
 		case ACTUATOR_COMMAND_ID:
-			if (frame.data[5] < L293D_BASE_ID + L293D_LIM_COUNT)
-			{
+			if (frame.data[5] < L293D_BASE_ID + L293D_LIM_COUNT) {
 				// Consider from 25 to 26
 				int motor_no = frame.data[5] - L293D_BASE_ID;
 				err = dc_motor_write_lim(&l293d[motor_no],
 							frame.data_32[0],
 							&switches[motor_no]);
-				if (err)
-				{
+				if (err) {
 					return 0;
 				}
 			}	
-			else if (frame.data[4] < L293D_BASE_ID + L293D_COUNT)
-			{
+			else if (frame.data[4] < L293D_BASE_ID + L293D_COUNT) {
 				// consider from 25 to 28	
 				err = dc_motor_write(&l293d[frame.data[5] - L293D_BASE_ID],
 							frame.data_32[0]);
 				
-				if (err)
-				{
+				if (err) {
 					return 0;
 				}
 			}
