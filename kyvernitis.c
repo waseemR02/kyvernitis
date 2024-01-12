@@ -34,3 +34,16 @@ int dc_motor_write(const struct dc_motor *motor, uint8_t motor_cmd)
 
 	return 0;
 }
+
+/*
+ * Writes motor command to dc motors with limit switches
+ */
+int dc_motor_write_lim(const struct dc_motor *motor, uint8_t motor_cmd, const struct gpio_dt_spec *lim)
+{
+	int ret = 1;
+	
+	if(!gpio_pin_get_dt(lim))
+		ret = dc_motor_write(motor, motor_cmd);
+
+	return ret;
+}

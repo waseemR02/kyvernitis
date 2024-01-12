@@ -17,3 +17,4 @@ struct dc_motor {
 };
 
 int dc_motor_write(const struct dc_motor *motor, uint8_t motor_cmd);
+int dc_motor_write_lim(const struct dc_motor *motor, uint8_t motor_cmd, const struct gpio_dt_spec *lim);
