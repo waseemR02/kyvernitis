@@ -1,0 +1,44 @@
+/ {
+	io_pins: relay-switches {
+		compatible = "relay-switches";
+		gpios = <&gpiob 5 GPIO_ACTIVE_HIGH>,
+			<&gpiob 6 GPIO_ACTIVE_HIGH>, 
+			<&gpiob 7 GPIO_ACTIVE_HIGH>, 
+			<&gpiob 8 GPIO_ACTIVE_HIGH>;
+	};
+
+        chosen {
+                zephyr,canbus = &mcp2515_can_bus;
+        };
+
+};
+
+&usart1 {
+        pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+        pinctrl-names = "default";
+        status = "okay";
+        current-speed = <115200>;
+};
+
+&spi1 {
+        status = "okay";
+        cs-gpios = <&gpiob 12 GPIO_ACTIVE_LOW>;
+        mcp2515_can_bus: can@0 {
+                compatible = "microchip,mcp2515";
+                spi-max-frequency = <1000000>;
+                int-gpios = <&gpiob 9 GPIO_ACTIVE_LOW>; /* B9 */
+                status = "okay";
+                reg = <0x0>;
+                osc-freq = <8000000>;
+                bus-speed = <125000>;
+                sjw = <1>;
+                sample-point = <875>;
+
+                can-transceiver {
+                        max-bitrate = <1000000>;
+                };
+        };
+};
+
+
+
