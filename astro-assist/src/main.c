@@ -66,7 +66,7 @@ struct can_frame astro_assist_rx_frame;
 
 int main()
 {
-	printk("Astro-Assist: v%s", APP_VERSION_STRING);
+	printk("\nAstro-Assist: v%s\n\n", APP_VERSION_STRING);
 
 	int err;
 
@@ -129,4 +129,5 @@ int main()
 		return 0;
 	}
 	
+	LOG_INF("Initialization completed successfully\n");
 }
