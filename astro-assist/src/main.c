@@ -129,5 +129,13 @@ int main()
 		return 0;
 	}
 	
+	
+	int filter_id = can_add_rx_filter_msgq(can_dev, &rx_msgq, &astro_assist_filter);
+	if (filter_id < 0)
+	{
+		LOG_ERR("Unable to add rx msgq [%d]", filter_id);
+		return 0;
+	}
+
 	LOG_INF("Initialization completed successfully\n");
 }
