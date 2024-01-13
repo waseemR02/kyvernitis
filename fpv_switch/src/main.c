@@ -18,9 +18,17 @@
 #include <zephyr/logging/log.h>
 
 
+#ifdef CONFIG_LOOPBACK_MODE
+	#define TX_THREAD_STACK_SIZE 512
+	#define TX_THREAD_PRIORITY 2
+
+	K_THREAD_STACK_DEFINE(tx_thread_stack, TX_THREAD_STACK_SIZE);
+
+#endif
+
+
 CAN_MSGQ_DEFINE(rx_msgq, 10);
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
-K_THREAD_STACK_DEFINE(tx_thread_stack, TX_THREAD_STACK_SIZE);
 
 
 /* DT spec for gpio pins */
@@ -43,32 +51,30 @@ struct can_frame fpv_switch_rx_frame;
 
 
 #ifdef CONFIG_LOOPBACK_MODE
+	
+	struct can_frame fpv_switch_tx_frame = {
+		.flags = CAN_FRAME_IDE,
+		.id = FPV_SWITCH_ID,
+	};
 
-struct can_frame fpv_tx_frame = {
-	.flags = CAN_FRAME_IDE,
-	.id = FPV_SWITCH_ID,
-	.mask = CAN_EXT_ID_MASK
-};
+	struct k_thread tx_thread_data;
 
-struct k_thread tx_thread_data;
-
-void tx_thread(void *unused1, void *unused2, void *unused3)
-{
-	int count = 0;
-	while (1) {	
-		fpv_tx_frame.dlc = 6;
-		fpv_tx_frame.data[5] = (uint8_t)count;
-		count++;
+	void tx_thread(void *unused1, void *unused2, void *unused3)
+	{
+		int count = 0;
+		while (1) {	
+			fpv_switch_tx_frame.dlc = 6;
+			fpv_switch_tx_frame.data[5] = (uint8_t)count;
+			count++;
 		
-		can_send(can_dev, &fpv_tx_frame, K_MSEC(100), NULL, NULL);
-		LOG_INF("CAN frame sent: ID: %d", bio_arm_tx_frame.id);
-		LOG_INF("CAN frame data: %d", bio_arm_tx_frame.data[5]);
-		gpio_pin_toggle_dt(&led);
-		k_sleep(K_SECONDS(1));
-	}
+			can_send(can_dev, &fpv_switch_tx_frame, K_MSEC(100), NULL, NULL);
+			LOG_INF("CAN frame sent: ID: %d", fpv_switch_tx_frame.id);
+			LOG_INF("CAN frame data: %d", fpv_switch_tx_frame.data[5]);
+			k_sleep(K_SECONDS(1));
+		}
 
-	return;
-}
+		return;
+	}
 #endif
 
 
@@ -104,10 +110,35 @@ int main(void)
 
 
 #ifdef CONFIG_LOOPBACK_MODE
+	k_tid_t tx_tid;
+
 	if (can_set_mode(can_dev, CAN_MODE_LOOPBACK)) {
 		LOG_ERR("Error setting CAN mode");
 		return 0;
 	}
+	
+	if (can_start(can_dev)) {
+		LOG_ERR("Error starting CAN controller.\n");
+		return 0;
+	}
+
+	int filter_id = can_add_rx_filter_msgq(can_dev, &rx_msgq, &fpv_filter);
+	if (filter_id < 0)
+	{
+		LOG_ERR("Unable to add rx msgq [%d]", filter_id);
+		return 0;
+	}
+
+	tx_tid = k_thread_create(&tx_thread_data, tx_thread_stack,
+				 K_THREAD_STACK_SIZEOF(tx_thread_stack),
+				 tx_thread, NULL, NULL, NULL,
+				 TX_THREAD_PRIORITY, 0, K_NO_WAIT);
+
+	if (!tx_tid) {
+		LOG_ERR("ERROR spawning tx thread\n");
+	}
+
+	LOG_INF("Initialization completed successfully\n");
 
 #endif
 
