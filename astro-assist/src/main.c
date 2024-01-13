@@ -79,7 +79,7 @@ int main()
 	/* Device ready checks */
 	
 	if (!device_is_ready(can_dev)) {
-		LOG_INF("CAN: Device %s not ready.\n", can_dev->name);
+		LOG_ERR("CAN: Device %s not ready.\n", can_dev->name);
 		return 0;
 	}
 	
