@@ -42,8 +42,13 @@ int dc_motor_write_lim(const struct dc_motor *motor, uint8_t motor_cmd, const st
 {
 	int ret = 1;
 	
-	if(!gpio_pin_get_dt(lim))
+	if(!gpio_pin_get_dt(lim)) {
 		ret = dc_motor_write(motor, motor_cmd);
+	}
+	else {
+		ret = dc_motor_write(motor, DC_MOTOR_STOP);
+	}
+	
 
 	return ret;
 }
