@@ -20,6 +20,9 @@
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 CAN_MSGQ_DEFINE(rx_msgq, 10);
 
+/* DT spec for led*/
+static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
+
 /* DT spec for limit switches */
 const struct gpio_dt_spec switches[L293D_LIM_COUNT] = {
 		GPIO_DT_SPEC_GET_BY_IDX(
@@ -100,6 +103,11 @@ int main()
 		}
 	}
 
+	if (!gpio_is_ready_dt(&led)){
+		LOG_ERR("Error: Led not ready\n");
+		return 0;
+	}
+
 	/* Start up configurations */
 	
 	for (size_t i = 0U; i < ARRAY_SIZE(switches); i++) {
@@ -130,13 +138,32 @@ int main()
 		return 0;
 	}
 
+
+	if (gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE) < 0)
+	{
+		LOG_ERR("Error: Led not configured\n");
+		return 0;
+	}	
+
 	LOG_INF("Initialization completed successfully\n");
 
 	while (true)
 	{
-		k_msgq_get(&rx_msgq, &astro_assist_rx_frame, K_FOREVER);
+		err = k_msgq_get(&rx_msgq, &astro_assist_rx_frame, K_MSEC(100));
+		if(k_msgq_get(&rx_msgq, &astro_assist_rx_frame, K_MSEC(100))) {
+			LOG_ERR("Message Recieve Timeout!!");
+			for(size_t i = 0U; i < ARRAY_SIZE(l293d); i++) {
+				err = dc_motor_write(&l293d[i], DC_MOTOR_STOP);
+				if (err) {
+					return 0;
+				}
 
+			}
+			LOG_INF("Stopped all motors");
+			continue;
+		}
 		struct can_frame frame = astro_assist_rx_frame;
+
 		if(frame.dlc != 6) {
 			//just handling motor commands for now
 			LOG_ERR("Unknown Frame Received\n");
@@ -167,5 +194,6 @@ int main()
 			}
 			break;
 		}
+		gpio_pin_toggle_dt(&led);
 	}
 }
