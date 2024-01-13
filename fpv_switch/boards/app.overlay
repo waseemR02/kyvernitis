@@ -1,10 +1,10 @@
 / {
 	io_pins: relay-switches {
 		compatible = "relay-switches";
-		gpios = <&gpioa 1 GPIO_ACTIVE_HIGH>,
-			<&gpioa 2 GPIO_ACTIVE_HIGH>, 
-			<&gpioa 3 GPIO_ACTIVE_HIGH>, 
-			<&gpioa 4 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpioa 1 GPIO_ACTIVE_LOW>,
+			<&gpioa 2 GPIO_ACTIVE_LOW>, 
+			<&gpioa 3 GPIO_ACTIVE_LOW>, 
+			<&gpioa 4 GPIO_ACTIVE_LOW>;
 	};
 
         chosen {
@@ -12,7 +12,6 @@
         };
 
 };
-
 
 &spi1 {
         status = "okay";
