@@ -88,7 +88,7 @@ struct can_frame bio_arm_rx_frame;
 
 struct can_frame bio_arm_tx_frame = {
 	.flags = CAN_FRAME_IDE,
-	.id = BIO_ARM_ID,
+	.id = LATTEPANDA_ID,
 	//.dlc = 4 // TODO: Decide on the sensor format
 };
 
