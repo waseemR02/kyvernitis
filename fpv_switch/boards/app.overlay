@@ -1,8 +1,8 @@
 / {
 	io_pins: relay-switches {
 		compatible = "relay-switches";
-		gpios = <&gpiob 5 GPIO_ACTIVE_HIGH>,
-			<&gpiob 6 GPIO_ACTIVE_HIGH>, 
+		gpios = <&gpiob 4 GPIO_ACTIVE_HIGH>,
+			<&gpiob 5 GPIO_ACTIVE_HIGH>, 
 			<&gpiob 7 GPIO_ACTIVE_HIGH>, 
 			<&gpiob 8 GPIO_ACTIVE_HIGH>;
 	};
@@ -13,12 +13,6 @@
 
 };
 
-&usart1 {
-        pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
-        pinctrl-names = "default";
-        status = "okay";
-        current-speed = <115200>;
-}
 
 &spi1 {
         status = "okay";
