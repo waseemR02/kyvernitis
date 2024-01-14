@@ -118,7 +118,17 @@ int main()
 			return 0;
 		}
 	}
-
+	
+	for (size_t i = 0U; i < ARRAY_SIZE(l293d); i++) {
+		if (gpio_pin_configure_dt(&(l293d[i].input_1), GPIO_OUTPUT_INACTIVE)) {
+			LOG_ERR("Error : LED not configured\n");
+			return 0;
+		}
+		if (gpio_pin_configure_dt(&(l293d[i].input_2), GPIO_OUTPUT_INACTIVE)) {
+			LOG_ERR("Error : LED not configured\n");
+			return 0;
+		}
+	}	
 
 #ifdef CONFIG_LOOPBACK_MODE
 	if (can_set_mode(can_dev, CAN_MODE_LOOPBACK)) {
@@ -149,8 +159,8 @@ int main()
 
 	while (true)
 	{
-		err = k_msgq_get(&rx_msgq, &astro_assist_rx_frame, K_MSEC(100));
-		if(k_msgq_get(&rx_msgq, &astro_assist_rx_frame, K_MSEC(100))) {
+		// err = k_msgq_get(&rx_msgq, &astro_assist_rx_frame, K_MSEC(100));
+		if(k_msgq_get(&rx_msgq, &astro_assist_rx_frame, K_MSEC(500))) {
 			LOG_ERR("Message Recieve Timeout!!");
 			for(size_t i = 0U; i < ARRAY_SIZE(l293d); i++) {
 				err = dc_motor_write(&l293d[i], DC_MOTOR_STOP);
@@ -163,6 +173,8 @@ int main()
 			continue;
 		}
 		struct can_frame frame = astro_assist_rx_frame;
+
+		printk("CAN frame ID: %x  Data: %d %d %d\n", frame.id, frame.data_32[0], frame.data[4], frame.data[5]);
 
 		if(frame.dlc != 6) {
 			//just handling motor commands for now
