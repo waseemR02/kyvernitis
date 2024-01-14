@@ -27,7 +27,6 @@ jobs:
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           git config --global safe.directory '*'
-          git rebase origin/main
           git log  --pretty=oneline | head -n 10
           west init -l . || true
           west config --global update.narrow true
