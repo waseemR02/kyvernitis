@@ -27,7 +27,6 @@ jobs:
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           git config --global safe.directory '*'
-          git rebase origin/main
           git log  --pretty=oneline | head -n 10
           west init -l . || true
           west config --global update.narrow true
@@ -46,6 +45,10 @@ jobs:
       - name: Build Bio-arm application
         working-directory: ${{github.workspace}}/..
         run: west build -p always -o=-j2 -b blackpill_f401cc kyvernitis/bio-arm
+
+      - name: Build FPV-Switch application
+        working-directory: ${{github.workspace}}/..
+        run: west build -p always -o=-j2 -b blackpill_f401cc kyvernitis/fpv-switch  
 
       - name: Build tests/read_can
         working-directory: ${{github.workspace}}/..
