@@ -14,8 +14,8 @@
 #include <kycan.h>
 #include <kyvernitis.h>
 
-#define L293D_COUNT 4
-#define L293D_LIM_COUNT 2
+#define L298N_COUNT 4
+#define L298N_LIM_COUNT 2
 
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 CAN_MSGQ_DEFINE(rx_msgq, 10);
@@ -33,7 +33,7 @@ K_THREAD_STACK_DEFINE(tx_thread_stack, TX_THREAD_STACK_SIZE);
 static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
 
 /* DT spec for limit switches */
-const struct gpio_dt_spec switches[L293D_LIM_COUNT] = {
+const struct gpio_dt_spec switches[L298N_LIM_COUNT] = {
 		GPIO_DT_SPEC_GET_BY_IDX(
 					DT_NODELABEL(limitswitches),
                                         gpios,
@@ -45,8 +45,8 @@ const struct gpio_dt_spec switches[L293D_LIM_COUNT] = {
 };
 
 
-/* DT spec for all instances of motors controlled by l293d*/
-const struct dc_motor l293d[L293D_COUNT] = {
+/* DT spec for all instances of motors controlled by l298n*/
+const struct dc_motor l298n[L298N_COUNT] = {
 	{
 		.input_1 = GPIO_DT_SPEC_GET_BY_IDX(DT_ALIAS(motor_1), gpios, 0),
 		.input_2 = GPIO_DT_SPEC_GET_BY_IDX(DT_ALIAS(motor_1), gpios, 1)
@@ -92,24 +92,32 @@ struct k_thread tx_thread_data;
 void tx_thread(void *unused1, void *unused2, void *unused3)
 {
 	while (1) {
-		for(size_t i = 0u; i < ARRAY_SIZE(l293d); i++) {
-			astro_assist_tx_frame.data[5] = i + L293D_BASE_ID;
+		for(size_t i = 0u; i < ARRAY_SIZE(l298n); i++) {
+			astro_assist_tx_frame.data[5] = i + L298N_BASE_ID;
 			astro_assist_tx_frame.data_32[0] = DC_MOTOR_FORWARD;
 			can_send(can_dev, &astro_assist_tx_frame, K_MSEC(100), NULL, NULL);
 		}
 
 		k_sleep(K_SECONDS(1));
 
-		for(size_t i = 0u; i < ARRAY_SIZE(l293d); i++) {
-			astro_assist_tx_frame.data[5] = i + L293D_BASE_ID;
+		for(size_t i = 0u; i < ARRAY_SIZE(l298n); i++) {
+			astro_assist_tx_frame.data[5] = i + L298N_BASE_ID;
+			astro_assist_tx_frame.data_32[0] = DC_MOTOR_STOP;
+			can_send(can_dev, &astro_assist_tx_frame, K_MSEC(100), NULL, NULL);
+		}
+
+		k_sleep(K_SECONDS(1));
+
+		for(size_t i = 0u; i < ARRAY_SIZE(l298n); i++) {
+			astro_assist_tx_frame.data[5] = i + L298N_BASE_ID;
 			astro_assist_tx_frame.data_32[0] = DC_MOTOR_BACKWARD;
 			can_send(can_dev, &astro_assist_tx_frame, K_MSEC(100), NULL, NULL);
 		}
 
 		k_sleep(K_SECONDS(1));
 
-		for(size_t i = 0u; i < ARRAY_SIZE(l293d); i++) {
-			astro_assist_tx_frame.data[5] = i + L293D_BASE_ID;
+		for(size_t i = 0u; i < ARRAY_SIZE(l298n); i++) {
+			astro_assist_tx_frame.data[5] = i + L298N_BASE_ID;
 			astro_assist_tx_frame.data_32[0] = DC_MOTOR_STOP;
 			can_send(can_dev, &astro_assist_tx_frame, K_MSEC(100), NULL, NULL);
 		}
@@ -137,20 +145,20 @@ int main()
 	
 	for (size_t i = 0U; i < ARRAY_SIZE(switches); i++) {
 		if (!gpio_is_ready_dt(&(switches[i]))) {
-			LOG_ERR("Limit Switch: %d is not ready\n", i + L293D_BASE_ID);
+			LOG_ERR("Limit Switch: %d is not ready\n", i + L298N_BASE_ID);
 			return 0;
 		}
 	}
 
-	for (size_t i = 0U; i < ARRAY_SIZE(l293d); i++) {
-		if (!gpio_is_ready_dt(&(l293d[i].input_1))) {
+	for (size_t i = 0U; i < ARRAY_SIZE(l298n); i++) {
+		if (!gpio_is_ready_dt(&(l298n[i].input_1))) {
 			LOG_ERR("DC-motor %d: input %d is not ready\n", i,
-							l293d[i].input_1.pin);
+							l298n[i].input_1.pin);
 			return 0;
 		}
-		if (!gpio_is_ready_dt(&(l293d[i].input_2))) {
+		if (!gpio_is_ready_dt(&(l298n[i].input_2))) {
 			LOG_ERR("DC-motor %d: input %d is not ready\n", i,
-							l293d[i].input_2.pin);
+							l298n[i].input_2.pin);
 			return 0;
 		}
 	}
@@ -171,12 +179,12 @@ int main()
 		}
 	}
 	
-	for (size_t i = 0U; i < ARRAY_SIZE(l293d); i++) {
-		if (gpio_pin_configure_dt(&(l293d[i].input_1), GPIO_OUTPUT_INACTIVE)) {
+	for (size_t i = 0U; i < ARRAY_SIZE(l298n); i++) {
+		if (gpio_pin_configure_dt(&(l298n[i].input_1), GPIO_OUTPUT_INACTIVE)) {
 			LOG_ERR("Error : LED not configured\n");
 			return 0;
 		}
-		if (gpio_pin_configure_dt(&(l293d[i].input_2), GPIO_OUTPUT_INACTIVE)) {
+		if (gpio_pin_configure_dt(&(l298n[i].input_2), GPIO_OUTPUT_INACTIVE)) {
 			LOG_ERR("Error : LED not configured\n");
 			return 0;
 		}
@@ -226,13 +234,13 @@ int main()
 	while (true)
 	{
 #ifndef CONFIG_LOOPBACK_MODE
-		if(k_msgq_get(&rx_msgq, &astro_assist_rx_frame,  K_MSEC(500))) {
+		if(k_msgq_get(&rx_msgq, &astro_assist_rx_frame,  K_MSEC(1000))) {
 #else
 		if(k_msgq_get(&rx_msgq, &astro_assist_rx_frame, K_FOREVER)) {
 #endif
 			LOG_ERR("Message Recieve Timeout!!");
-			for(size_t i = 0U; i < ARRAY_SIZE(l293d); i++) {
-				err = dc_motor_write(&l293d[i], DC_MOTOR_STOP);
+			for(size_t i = 0U; i < ARRAY_SIZE(l298n); i++) {
+				err = dc_motor_write(&l298n[i], DC_MOTOR_STOP);
 				if (err) {
 					return 0;
 				}
@@ -254,19 +262,19 @@ int main()
 		switch (frame.data[4]) {
 		
 		case ACTUATOR_COMMAND_ID:
-			if (frame.data[5] < L293D_BASE_ID + L293D_LIM_COUNT) {
+			if (frame.data[5] < L298N_BASE_ID + L298N_LIM_COUNT) {
 				// Consider from 25 to 26
-				int motor_no = frame.data[5] - L293D_BASE_ID;
-				err = dc_motor_write_lim(&l293d[motor_no],
+				int motor_no = frame.data[5] - L298N_BASE_ID;
+				err = dc_motor_write_lim(&l298n[motor_no],
 							frame.data_32[0],
 							&switches[motor_no]);
 				if (err) {
 					return 0;
 				}
 			}	
-			else if (frame.data[5] < L293D_BASE_ID + L293D_COUNT) {
+			else if (frame.data[5] < L298N_BASE_ID + L298N_COUNT) {
 				// consider from 25 to 28	
-				err = dc_motor_write(&l293d[frame.data[5] - L293D_BASE_ID],
+				err = dc_motor_write(&l298n[frame.data[5] - L298N_BASE_ID],
 							frame.data_32[0]);
 				
 				if (err) {
