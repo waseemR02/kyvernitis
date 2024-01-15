@@ -162,7 +162,7 @@ void tx_thread(void *unused1, void *unused2, void *unused3)
 				bio_arm_tx_frame.data[4] = SENSOR_DATA_ID;
 			}
 			can_send(can_dev, &bio_arm_tx_frame, K_MSEC(100), NULL, NULL);
-			LOG_INF("CAN frame sent: ID: %d", bio_arm_tx_frame.id);
+			LOG_INF("CAN frame sent: ID: %x", bio_arm_tx_frame.id);
 			LOG_INF("CAN frame data: %d %d %d", bio_arm_tx_frame.data_32[0],
 								bio_arm_tx_frame.data[4],
 								bio_arm_tx_frame.data[5]);
