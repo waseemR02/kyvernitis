@@ -1,0 +1,10 @@
+mainmenu "Controller Area Network sample application"
+
+config LOOPBACK_MODE
+	bool "Loopback LOOPBACK_MODE"
+	default n
+	help
+	  Set the controller to loopback mode and enables a testing tx_thread which send expected can frames.
+	  This allows testing without a second board.
+
+source "Kconfig.zephyr"

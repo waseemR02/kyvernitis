@@ -1,0 +1,17 @@
+description: DC motors driven by gpios, specifically driven by L293D (parent node)
+
+compatible: "dc-motors"
+
+child-binding:
+  description: GPIO-driven dc motor (child node)
+  properties:
+    gpios:
+      required: true
+      type: phandle-array
+      description: |
+        Input pins for the motor
+
+    label:
+      type: string
+      description: |
+        Human readable string describing the motor. 
