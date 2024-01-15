@@ -24,8 +24,16 @@
 #define TX_THREAD_PRIORITY 2
 
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
-K_THREAD_STACK_DEFINE(tx_thread_stack, TX_THREAD_STACK_SIZE);
 CAN_MSGQ_DEFINE(rx_msgq, 10);
+
+#ifdef CONFIG_TX_MODE
+
+#define TX_THREAD_STACK_SIZE 512
+#define TX_THREAD_PRIORITY 2
+
+K_THREAD_STACK_DEFINE(tx_thread_stack, TX_THREAD_STACK_SIZE);
+
+#endif
 
 #if !DT_NODE_EXISTS(DT_PATH(zephyr_user)) || \
 	!DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
@@ -86,17 +94,17 @@ const struct can_filter bio_arm_filter = {
 
 struct can_frame bio_arm_rx_frame;
 
+#ifdef CONFIG_TX_MODE
+
+/* Transfer thread */
+
 struct can_frame bio_arm_tx_frame = {
 	.flags = CAN_FRAME_IDE,
 	.id = LATTEPANDA_ID,
-	//.dlc = 4 // TODO: Decide on the sensor format
+	.data[4] = SENSOR_DATA_ID
 };
 
 
-/*
- * Transfer thread
- * 
- */
 
 struct k_thread tx_thread_data;
 
@@ -174,7 +182,7 @@ void tx_thread(void *unused1, void *unused2, void *unused3)
 	return;
 }
 
-
+#endif
 
 
 int main(void)
@@ -182,7 +190,6 @@ int main(void)
 	printk("\nBio-arm: v%s\n\n", APP_VERSION_STRING);
 
 	int err;
-	k_tid_t tx_tid;
 	uint32_t pulse = 15200000;
 
 
@@ -253,7 +260,9 @@ int main(void)
 		return 0;
 	}
 
-	tx_tid = k_thread_create(&tx_thread_data, tx_thread_stack,
+#ifdef CONFIG_TX_MODE
+
+	k_tid_t tx_tid = k_thread_create(&tx_thread_data, tx_thread_stack,
 				 K_THREAD_STACK_SIZEOF(tx_thread_stack),
 				 tx_thread, NULL, NULL, NULL,
 				 TX_THREAD_PRIORITY, 0, K_NO_WAIT);
@@ -262,6 +271,7 @@ int main(void)
 		LOG_ERR("ERROR spawning tx thread\n");
 	}
 
+#endif
 	LOG_INF("Initialization completed successfully\n");
 
 	while (true)

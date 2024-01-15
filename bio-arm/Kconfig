@@ -11,5 +11,10 @@ config LOOPBACK_MODE
 	help
 	  Set the controller to loopback mode.
 	  This allows testing without a second board.
+config TX_MODE
+	bool "Transfer TX_MODE"
+	default y
+	help
+	  Deactivate the transfer thread.
 
 source "Kconfig.zephyr"
