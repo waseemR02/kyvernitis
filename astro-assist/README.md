@@ -9,6 +9,10 @@
 | dlc             | 6                                                                   |
 | data            | 0/1/2 {4 bytes} + ACTUATOR_COMMAND_ID {10}{1 byte} + 25-28 {1 bytes}|
 
+## Schematics
+
+![Astro-Assist](https://github.com/waseemR02/kyvernitis/assets/98299006/7cc9c33b-c7f7-4b81-9a3e-e73dc3de0b0b)
+
 ## Pin Configuration
 
 | PIN             |                |
