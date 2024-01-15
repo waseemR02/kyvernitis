@@ -20,6 +20,15 @@
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 CAN_MSGQ_DEFINE(rx_msgq, 10);
 
+#ifdef CONFIG_LOOPBACK_MODE
+
+#define TX_THREAD_STACK_SIZE 512
+#define TX_THREAD_PRIORITY 2
+
+K_THREAD_STACK_DEFINE(tx_thread_stack, TX_THREAD_STACK_SIZE);
+
+#endif
+
 /* DT spec for led*/
 static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
 
@@ -69,6 +78,49 @@ const struct can_filter astro_assist_filter = {
 struct can_frame astro_assist_rx_frame;
 
 
+#ifdef CONFIG_LOOPBACK_MODE
+	
+struct can_frame astro_assist_tx_frame = {
+	.flags = CAN_FRAME_IDE,
+	.id = ASTRO_ASSIST_ID,
+	.dlc = 6,
+	.data[4] = ACTUATOR_COMMAND_ID,
+};
+
+struct k_thread tx_thread_data;
+
+void tx_thread(void *unused1, void *unused2, void *unused3)
+{
+	while (1) {
+		for(size_t i = 0u; i < ARRAY_SIZE(l293d); i++) {
+			astro_assist_tx_frame.data[5] = i + L293D_BASE_ID;
+			astro_assist_tx_frame.data_32[0] = DC_MOTOR_FORWARD;
+			can_send(can_dev, &astro_assist_tx_frame, K_MSEC(100), NULL, NULL);
+		}
+
+		k_sleep(K_SECONDS(1));
+
+		for(size_t i = 0u; i < ARRAY_SIZE(l293d); i++) {
+			astro_assist_tx_frame.data[5] = i + L293D_BASE_ID;
+			astro_assist_tx_frame.data_32[0] = DC_MOTOR_BACKWARD;
+			can_send(can_dev, &astro_assist_tx_frame, K_MSEC(100), NULL, NULL);
+		}
+
+		k_sleep(K_SECONDS(1));
+
+		for(size_t i = 0u; i < ARRAY_SIZE(l293d); i++) {
+			astro_assist_tx_frame.data[5] = i + L293D_BASE_ID;
+			astro_assist_tx_frame.data_32[0] = DC_MOTOR_STOP;
+			can_send(can_dev, &astro_assist_tx_frame, K_MSEC(100), NULL, NULL);
+		}
+
+		k_sleep(K_SECONDS(1));
+	}
+	
+	return;
+}
+
+#endif
 
 int main()
 {
@@ -131,11 +183,25 @@ int main()
 	}	
 
 #ifdef CONFIG_LOOPBACK_MODE
+
+	k_tid_t tx_tid;
+
 	if (can_set_mode(can_dev, CAN_MODE_LOOPBACK)) {
 		LOG_ERR("Error setting CAN mode");
 		return 0;
 	}
+	
+	tx_tid = k_thread_create(&tx_thread_data, tx_thread_stack,
+				 K_THREAD_STACK_SIZEOF(tx_thread_stack),
+				 tx_thread, NULL, NULL, NULL,
+				 TX_THREAD_PRIORITY, 0, K_NO_WAIT);
+
+	if (!tx_tid) {
+		LOG_ERR("ERROR spawning tx thread\n");
+	}
+
 #endif
+
 	if (can_start(can_dev)) {
 		LOG_ERR("Error starting CAN controller.\n");
 		return 0;
@@ -159,8 +225,11 @@ int main()
 
 	while (true)
 	{
-		// err = k_msgq_get(&rx_msgq, &astro_assist_rx_frame, K_MSEC(100));
-		if(k_msgq_get(&rx_msgq, &astro_assist_rx_frame, K_MSEC(500))) {
+#ifndef CONFIG_LOOPBACK_MODE
+		if(k_msgq_get(&rx_msgq, &astro_assist_rx_frame,  K_MSEC(500))) {
+#else
+		if(k_msgq_get(&rx_msgq, &astro_assist_rx_frame, K_FOREVER)) {
+#endif
 			LOG_ERR("Message Recieve Timeout!!");
 			for(size_t i = 0U; i < ARRAY_SIZE(l293d); i++) {
 				err = dc_motor_write(&l293d[i], DC_MOTOR_STOP);
