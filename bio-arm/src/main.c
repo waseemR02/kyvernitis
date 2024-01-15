@@ -166,9 +166,9 @@ void tx_thread(void *unused1, void *unused2, void *unused3)
 			LOG_INF("CAN frame data: %d %d %d", bio_arm_tx_frame.data_32[0],
 								bio_arm_tx_frame.data[4],
 								bio_arm_tx_frame.data[5]);
+			k_sleep(K_SECONDS(1));
+			gpio_pin_toggle_dt(&led);
 		}
-		gpio_pin_toggle_dt(&led);
-		k_sleep(K_SECONDS(1));
 	}
 
 	return;
@@ -269,6 +269,12 @@ int main(void)
 		k_msgq_get(&rx_msgq, &bio_arm_rx_frame, K_FOREVER);
 
 		struct can_frame frame = bio_arm_rx_frame;
+
+		LOG_INF("CAN frame sent: ID: %d", frame.id);
+		LOG_INF("CAN frame data: %d %d %d", frame.data_32[0],
+							frame.data[4],
+							frame.data[5]);
+
 		if(frame.dlc != 6)
 		{
 			//just handling motor commands for now
@@ -292,7 +298,7 @@ int main(void)
 			break;
 		
 		case SENSOR_DATA_ID:
-			LOG_INF("Recieved sensor data\n");
+			LOG_INF("Received sensor data\n");
 			break;
 		}
 	}
