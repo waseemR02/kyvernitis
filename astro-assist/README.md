@@ -7,7 +7,7 @@
 | ID              | ASTRO_ASSIST_ID {0x400}                                             |
 | flags           | Extended CAN ID                                                     |
 | dlc             | 6                                                                   |
-| data            | 0/1/2 {4 bytes} + ACTUATOR_COMMAND_ID {10}{1 byte} + 25-28 {1 bytes}|
+| data            | 0/1/2 {4 bytes} + ACTUATOR_COMMAND_ID {10}{1 byte} + 25-28 {1 byte}|
 
 ## Schematics
 
