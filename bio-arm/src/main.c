@@ -80,6 +80,9 @@ struct pwm_motor servo[SERVOS_COUNT] = {
 	}
 };
 
+/* Servo state for servos */
+servo_state state[SERVOS_COUNT] = {SERVO_DEFAULT_STATE, SERVO_DEFAULT_STATE};
+
 /* DT spec for can module*/
 const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 
@@ -283,10 +286,21 @@ int main(void)
 			for(size_t i = 0U; i < ARRAY_SIZE(roboclaw); i++) {
 				err = pwm_motor_write(&roboclaw[i], PWM_MOTOR_STOP);
 				if(err) {
+					LOG_ERR("Unable to write pwm pulse to Roboclaw: %d", i + ROBOCLAW_BASE_ID);
 					return 0;
 				}
 			}
-			LOG_INF("Stopped robclaw");
+			LOG_INF("Stopped roboclaw");
+
+			for(size_t i = 0U; i < ARRAY_SIZE(servo); i++) {
+				err = pwm_motor_write(&servo[i], state[i]);
+				if(err) {
+					LOG_ERR("Unable to write pwm pulse to Servo: %d", i + SERVO_BASE_ID);
+					return 0;
+				}
+			}
+			LOG_INF("Set all servo motors to previous state");
+
 			continue;
 		}
 
@@ -321,6 +335,9 @@ int main(void)
 				if(pwm_motor_write(&servo[frame.data[5] - SERVO_BASE_ID], frame.data_32[0])) {
 					LOG_ERR("Unable to write pwm pulse to Servo Motor: %d", frame.data[5]);
 					return 0;
+				}
+				else {
+					state[frame.data[5] - SERVO_BASE_ID] = frame.data_32[0];
 				}
 			}
 			break;

@@ -8,12 +8,15 @@
 #define MAX_SERVOS 5
 
 #define PWM_MOTOR_STOP 1520000
+#define SERVO_DEFAULT_STATE 1520000
 
 struct pwm_motor {
 	const struct pwm_dt_spec dev_spec;
 	const uint32_t min_pulse;
 	const uint32_t max_pulse;
 };
+
+typedef uint32_t servo_state;
 
 // Wrapper around pwm_set_pulse_dt to ensure that pulse_width
 // remains under max-min range
