@@ -7,7 +7,7 @@
 #define MAX_SABERTOOTHS 3
 #define MAX_SERVOS 5
 
-#define PWM_MOTOR_STOP 15200000
+#define PWM_MOTOR_STOP 1520000
 
 struct pwm_motor {
 	const struct pwm_dt_spec dev_spec;
