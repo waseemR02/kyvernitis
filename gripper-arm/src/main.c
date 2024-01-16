@@ -15,6 +15,8 @@
 #include <kycan.h>
 #include <kyvernitis.h>
 
+#define ROBOCLAWS_COUNT 2
+
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 CAN_MSGQ_DEFINE(rx_msgq, 25);
 
@@ -33,6 +35,26 @@ const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 
 /* DT spec for led*/
 static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
+
+/* DT spec for roboclaws*/
+struct pwm_motor roboclaw[ROBOCLAWS_COUNT] = {
+	{
+		.dev_spec = PWM_DT_SPEC_GET(DT_ALIAS(pwm_motor1)),
+		.min_pulse = DT_PROP(DT_ALIAS(pwm_motor1), min_pulse),
+		.max_pulse = DT_PROP(DT_ALIAS(pwm_motor1), max_pulse)
+	},
+	{
+		.dev_spec = PWM_DT_SPEC_GET(DT_ALIAS(pwm_motor2)),
+		.min_pulse = DT_PROP(DT_ALIAS(pwm_motor2), min_pulse),
+		.max_pulse = DT_PROP(DT_ALIAS(pwm_motor2), max_pulse)
+	}
+};
+
+struct pwm_motor servo = {
+	.dev_spec = PWM_DT_SPEC_GET(DT_ALIAS(pwm_servo1)),
+	.min_pulse = DT_PROP(DT_ALIAS(pwm_servo1), min_pulse),
+	.max_pulse = DT_PROP(DT_ALIAS(pwm_servo1), max_pulse)
+};
 
 /* Can filter for Astro Assist*/
 const struct can_filter gripper_arm_filter = {
