@@ -56,6 +56,8 @@ struct pwm_motor servo = {
 	.max_pulse = DT_PROP(DT_ALIAS(pwm_servo1), max_pulse)
 };
 
+servo_state state = SERVO_DEFAULT_STATE;
+
 /* Can filter for Astro Assist*/
 const struct can_filter gripper_arm_filter = {
 	.flags = CAN_FILTER_DATA | CAN_FILTER_IDE,
@@ -159,8 +161,21 @@ int main()
 		if(k_msgq_get(&rx_msgq, &gripper_arm_rx_frame, K_FOREVER)) {
 #endif
 			LOG_ERR("Message Recieve Timeout!!");
-			// send stop command to all motors
-			LOG_INF("Stopped all motors");
+			// send stop command to roboclaw motors
+			for(size_t i = 0U; i < ARRAY_SIZE(roboclaw); i++) {
+				if(pwm_motor_write(&roboclaw[i], PWM_MOTOR_STOP)) {
+					LOG_ERR("Unable to write pwm pulse to Roboclaw: %d", i + ROBOCLAW_BASE_ID);
+					return 0;
+				}
+			}
+			LOG_INF("Stopped all Roboclaw motors");
+
+			if(pwm_motor_write(&servo, SERVO_DEFAULT_STATE)) {
+				LOG_ERR("Unable to write pwm pulse to servo");
+				return 0;
+			}
+			LOG_INF("Set all servo motors to previous state");
+
 			continue;
 		}
 				
