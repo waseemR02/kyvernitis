@@ -276,7 +276,19 @@ int main(void)
 
 	while (true)
 	{
-		k_msgq_get(&rx_msgq, &bio_arm_rx_frame, K_FOREVER);
+		if(k_msgq_get(&rx_msgq, &bio_arm_rx_frame, K_MSEC(1000)))
+		{
+			LOG_ERR("Message Receive Timeout!!");
+			/* Send stop cmd to roboclaw */
+			for(size_t i = 0U; i < ARRAY_SIZE(roboclaw); i++) {
+				err = pwm_motor_write(&roboclaw[i], PWM_MOTOR_STOP);
+				if(err) {
+					return 0;
+				}
+			}
+			LOG_INF("Stopped robclaw");
+			continue;
+		}
 
 		struct can_frame frame = bio_arm_rx_frame;
 
@@ -298,12 +310,18 @@ int main(void)
 			if (frame.data[5] < ROBOCLAW_BASE_ID + ROBOCLAWS_COUNT)
 			{
 				// in the case it will only consider from 10 - 11
-				pwm_motor_write(&roboclaw[frame.data[5] - ROBOCLAW_BASE_ID], frame.data_32[0]);
+				if (pwm_motor_write(&roboclaw[frame.data[5] - ROBOCLAW_BASE_ID], frame.data_32[0])) {
+					LOG_ERR("Unable to write pwm pulse to PWM motor: %d", frame.data[5]);
+					return 0;
+				}
 			}
 			else if (frame.data[5] < SERVO_BASE_ID + SERVOS_COUNT)
 			{
 				// it will consider from 15 - 19
-				pwm_motor_write(&servo[frame.data[5] - SERVO_BASE_ID], frame.data_32[0]);
+				if(pwm_motor_write(&servo[frame.data[5] - SERVO_BASE_ID], frame.data_32[0])) {
+					LOG_ERR("Unable to write pwm pulse to Servo Motor: %d", frame.data[5]);
+					return 0;
+				}
 			}
 			break;
 		
