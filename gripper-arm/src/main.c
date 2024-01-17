@@ -202,14 +202,14 @@ int main()
 			}
 			else if (frame.data[5] < SERVO_BASE_ID)
 			{
-				servo_state = frame.data_32[0];
-
 				// it will consider from 15 - 19
 				if(pwm_motor_write(&servo, servo_state)) {
 					LOG_ERR("Unable to write pwm pulse to Servo Motor: %d", frame.data[5]);
 					return 0;
 				}
-
+				else {
+					servo_state = frame.data_32[0];
+				}
 			}
 			break;
 		}
