@@ -157,16 +157,16 @@ void tx_thread(void *unused1, void *unused2, void *unused3)
 				val_mv = (int32_t)buf;
 			}
 			
-			if (i == 0) {
+			if (adc_channels[i].channel_id == 0) {
                                 val = MQ136_readings(val_mv);
                         } 
-			else if (i == 1) {
+			else if (adc_channels[i].channel_id == 1) {
                                 val = MQ2_readings(val_mv);
                         } 
-			else if (i == 8) {
+			else if (adc_channels[i].channel_id == 8) {
                                 val = MQ137_readings(val_mv);
                         } 
-			else if (i == 9) {
+			else if (adc_channels[i].channel_id == 9) {
                                 val = MQ7_readings(val_mv);
 			}
 			else {
@@ -175,7 +175,7 @@ void tx_thread(void *unused1, void *unused2, void *unused3)
 
 			LOG_INF("Channel:%d = %"PRId32" mV\n", i, (int32_t)val);
 			bio_arm_tx_frame.data_32[0] = (uint32_t)val;
-			bio_arm_tx_frame.data[5] = (uint8_t)i;
+			bio_arm_tx_frame.data[5] = (uint8_t)adc_channels[i].channel_id;
 			can_send(can_dev, &bio_arm_tx_frame, K_MSEC(100), NULL, NULL);
 			LOG_INF("CAN frame sent: ID: %x", bio_arm_tx_frame.id);
 			LOG_INF("CAN frame data: %d %d %d", bio_arm_tx_frame.data_32[0],
@@ -318,7 +318,6 @@ int main(void)
 
 #endif
 	LOG_INF("Initialization completed successfully\n");
-
 	while (true)
 	{
 		if(k_msgq_get(&rx_msgq, &bio_arm_rx_frame, K_MSEC(1000)))
