@@ -16,6 +16,7 @@
 #include <kyvernitis.h>
 
 #define ROBOCLAWS_COUNT 2
+#define STEPPER_MOTOR_COUNT 2
 
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 CAN_MSGQ_DEFINE(rx_msgq, 25);
@@ -57,6 +58,18 @@ struct pwm_motor servo = {
 };
 
 servo_state_t servo_state = SERVO_DEFAULT_STATE;
+
+/* DT spec for stepper motors */
+struct stepper_motor tb6600[STEPPER_MOTOR_COUNT] = {
+	{
+		.dir = GPIO_DT_SPEC_GET(DT_ALIAS(stepper_motor1), dir_gpios),
+		.step = GPIO_DT_SPEC_GET(DT_ALIAS(stepper_motor1), step_gpios)
+	},
+	{
+		.dir = GPIO_DT_SPEC_GET(DT_ALIAS(stepper_motor2), dir_gpios),
+		.step = GPIO_DT_SPEC_GET(DT_ALIAS(stepper_motor2), step_gpios)
+	}
+};
 
 /* Can filter for Astro Assist*/
 const struct can_filter gripper_arm_filter = {
