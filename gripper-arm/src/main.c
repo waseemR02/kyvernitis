@@ -188,7 +188,31 @@ int main()
 			LOG_ERR("Unknown Frame Received\n");
 			continue;
 		}
-	}
 
+		switch (frame.data[4]) {
+		
+		case ACTUATOR_COMMAND_ID:
+			if (frame.data[5] < ROBOCLAW_BASE_ID + ROBOCLAWS_COUNT)
+			{
+				// in the case it will only consider from 10 - 11
+				if (pwm_motor_write(&roboclaw[frame.data[5] - ROBOCLAW_BASE_ID], frame.data_32[0])) {
+					LOG_ERR("Unable to write pwm pulse to PWM motor: %d", frame.data[5]);
+					return 0;
+				}
+			}
+			else if (frame.data[5] < SERVO_BASE_ID)
+			{
+				servo_state = frame.data_32[0];
+
+				// it will consider from 15 - 19
+				if(pwm_motor_write(&servo, servo_state)) {
+					LOG_ERR("Unable to write pwm pulse to Servo Motor: %d", frame.data[5]);
+					return 0;
+				}
+
+			}
+			break;
+		}
+	}
 	return 0;
 }
