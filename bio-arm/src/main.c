@@ -108,6 +108,7 @@ struct can_frame bio_arm_rx_frame;
 struct can_frame bio_arm_tx_frame = {
 	.flags = CAN_FRAME_IDE,
 	.id = LATTEPANDA_ID,
+	.dlc = 6,
 	.data[4] = SENSOR_DATA_ID
 };
 
@@ -129,7 +130,9 @@ void tx_thread(void *unused1, void *unused2, void *unused3)
 		/* buffer size in bytes, not number of samples */
 		.buffer_size = sizeof(buf),
 	};
-
+	
+	struct sensor_value temp;
+	struct sensor_value humd;
 
 	while (1) {
 		for (size_t i = 0U; i < ARRAY_SIZE(adc_channels); i++) {
@@ -168,11 +171,12 @@ void tx_thread(void *unused1, void *unused2, void *unused3)
                                 } else if (i == 9) {
                                         val = MQ7_readings(val_mv);
 				}
+				else {
+					continue;
+				}
 				LOG_INF("Channel:%d = %"PRId32" mV\n", i, (int32_t)val);
-				bio_arm_tx_frame.dlc = 6;
 				bio_arm_tx_frame.data_32[0] = (uint32_t)val;
 				bio_arm_tx_frame.data[5] = (uint8_t)i;
-				bio_arm_tx_frame.data[4] = SENSOR_DATA_ID;
 			}
 			can_send(can_dev, &bio_arm_tx_frame, K_MSEC(100), NULL, NULL);
 			LOG_INF("CAN frame sent: ID: %x", bio_arm_tx_frame.id);
@@ -183,7 +187,41 @@ void tx_thread(void *unused1, void *unused2, void *unused3)
 			gpio_pin_toggle_dt(&led);
 		}
 
+		if(sensor_sample_fetch(dht11)) {
+			LOG_ERR("Error fetching dht11 data");
+			continue;
+		}
 
+		if(sensor_channel_get(dht11, SENSOR_CHAN_AMBIENT_TEMP, &temp)) {
+			LOG_ERR("Error fetching dht11 temperature data");
+			continue;
+		}
+		bio_arm_tx_frame.data[5] = 2;
+		bio_arm_tx_frame.data_32[0] = (uint32_t)sensor_value_to_float(&temp);
+		can_send(can_dev, &bio_arm_tx_frame, K_MSEC(100), NULL, NULL);
+		LOG_INF("CAN frame sent: ID: %x", bio_arm_tx_frame.id);
+		LOG_INF("CAN frame data: %d %d %d", bio_arm_tx_frame.data_32[0],
+							bio_arm_tx_frame.data[4],
+							bio_arm_tx_frame.data[5]);
+
+		gpio_pin_toggle_dt(&led);
+		k_sleep(K_SECONDS(1));
+
+
+		if(sensor_channel_get(dht11, SENSOR_CHAN_HUMIDITY, &humd)) {
+			LOG_ERR("Error fetching dht11 humidity data");
+			continue;
+		}
+		bio_arm_tx_frame.data[5] = 3;
+		bio_arm_tx_frame.data_32[0] = (uint32_t)sensor_value_to_float(&humd);
+		can_send(can_dev, &bio_arm_tx_frame, K_MSEC(100), NULL, NULL);
+		LOG_INF("CAN frame sent: ID: %x", bio_arm_tx_frame.id);
+		LOG_INF("CAN frame data: %d %d %d", bio_arm_tx_frame.data_32[0],
+							bio_arm_tx_frame.data[4],
+							bio_arm_tx_frame.data[5]);
+
+		gpio_pin_toggle_dt(&led);
+		k_sleep(K_SECONDS(1));
 	}
 
 	return;
