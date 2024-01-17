@@ -21,6 +21,21 @@
 
 	};
 
+	steppermotors {
+		compatible = "stepper-motors";
+		stepper_motor_1: motor_1 {
+			label = "Stepper Motor 1";
+			dir-gpios = <&gpioa 2 GPIO_ACTIVE_HIGH>;
+			step-gpios = <&gpioa 3 GPIO_ACTIVE_HIGH>;
+		};
+
+		stepper_motor_2: motor_2 {
+			label = "Stepper Motor 2";
+			dir-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+			step-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
 	aliases {
 		pwm-motor1 = &pwm_motor_1;
 		pwm-motor2 = &pwm_motor_2;
