@@ -2,6 +2,7 @@
 * Kyervnitis helper macros and function declarations
 */
 #include <zephyr/drivers/pwm.h>
+#include <zephyr/drivers/gpio.h>
 
 #define MAX_ROBOCLAWS 2
 #define MAX_SABERTOOTHS 3
@@ -14,6 +15,11 @@ struct pwm_motor {
 	const struct pwm_dt_spec dev_spec;
 	const uint32_t min_pulse;
 	const uint32_t max_pulse;
+};
+
+struct stepper_motor {
+	const struct gpio_dt_spec dir;
+	const struct gpio_dt_spec step;
 };
 
 typedef uint32_t servo_state_t;
