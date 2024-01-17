@@ -40,6 +40,8 @@
 		pwm-motor1 = &pwm_motor_1;
 		pwm-motor2 = &pwm_motor_2;
 		pwm-servo1 = &pwm_servo_1;
+		stepper-motor1 = &stepper_motor_1;
+		stepper-motor2 = &stepper_motor_2;
 	};
 
 	chosen {
