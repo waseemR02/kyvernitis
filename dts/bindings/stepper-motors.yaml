@@ -1,0 +1,23 @@
+description: Stepper motors driven by TB6600 (parent node)
+
+compatible: "stepper-motors"
+
+child-binding:
+  description: GPIO-driven dc motor (child node)
+  properties:
+    dir-gpios:
+      required: true
+      type: phandle-array
+      description: |
+        Dir pin for the motor
+
+    step-gpios:
+      required: true
+      type: phandle-array
+      description: |
+        Step pin for the motor
+
+    label:
+      type: string
+      description: |
+        Human readable string describing the motor. 
