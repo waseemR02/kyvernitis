@@ -9,6 +9,7 @@
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/can.h>
+#include <zephyr/drivers/sensor.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
@@ -82,6 +83,9 @@ struct pwm_motor servo[SERVOS_COUNT] = {
 
 /* Servo state for servos */
 servo_state_t servo_state[SERVOS_COUNT] = {SERVO_DEFAULT_STATE, SERVO_DEFAULT_STATE};
+
+/* DT spec for dht11 sensor */
+const struct device *const dht11 = DEVICE_DT_GET(DT_ALIAS(dht_11));
 
 /* DT spec for can module*/
 const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
@@ -159,12 +163,10 @@ void tx_thread(void *unused1, void *unused2, void *unused3)
                                         val = MQ136_readings(val_mv);
                                 } else if (i == 1) {
                                         val = MQ2_readings(val_mv);
-                                } else if (i == 2) {
-                                        continue; // DHT11_function not defined yet !
                                 } else if (i == 8) {
+                                        val = MQ137_readings(val_mv);
+                                } else if (i == 9) {
                                         val = MQ7_readings(val_mv);
-                                } else {
-                                        LOG_INF("NOT IN USE\t");
 				}
 				LOG_INF("Channel:%d = %"PRId32" mV\n", i, (int32_t)val);
 				bio_arm_tx_frame.dlc = 6;
@@ -180,6 +182,8 @@ void tx_thread(void *unused1, void *unused2, void *unused3)
 			k_sleep(K_SECONDS(1));
 			gpio_pin_toggle_dt(&led);
 		}
+
+
 	}
 
 	return;
@@ -200,7 +204,7 @@ int main(void)
 	/* Device ready checks*/
 
 	if (!device_is_ready(can_dev)) {
-		LOG_INF("CAN: Device %s not ready.\n", can_dev->name);
+		LOG_ERR("CAN: Device %s not ready.", can_dev->name);
 		return 0;
 	}
 
@@ -208,16 +212,18 @@ int main(void)
 	for (size_t i = 0U; i < ARRAY_SIZE(adc_channels); i++) {
 		if (!adc_is_ready_dt(&adc_channels[i])) {
 			LOG_ERR("ADC controller device %s not ready\n", adc_channels[i].dev->name);
-			return 0;
 		}
 
 		err = adc_channel_setup_dt(&adc_channels[i]);
 		if (err < 0) {
 			LOG_ERR("Could not setup channel #%d (%d)\n", i, err);
-			return 0;
 		}
 	}
 	
+	if(!device_is_ready(dht11)) {
+		LOG_ERR("DHT11 sensor not ready.");
+	}
+
 	// check for pwm motor readiness
 	for (size_t i = 0U; i < ARRAY_SIZE(roboclaw); i++) {
 		if (!pwm_is_ready_dt(&(roboclaw[i].dev_spec))) {
