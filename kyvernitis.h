@@ -16,7 +16,7 @@ struct pwm_motor {
 	const uint32_t max_pulse;
 };
 
-typedef uint32_t servo_state;
+typedef uint32_t servo_state_t;
 
 // Wrapper around pwm_set_pulse_dt to ensure that pulse_width
 // remains under max-min range
