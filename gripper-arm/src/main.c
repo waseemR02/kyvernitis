@@ -133,7 +133,65 @@ int main()
 		return 0;
 	}
 
+	// check for pwm motor readiness
+	for (size_t i = 0U; i < ARRAY_SIZE(roboclaw); i++) {
+		if (!pwm_is_ready_dt(&(roboclaw[i].dev_spec))) {
+			LOG_ERR("PWM: Roboclaw %s is not ready\n", roboclaw[i].dev_spec.dev->name);
+			return 0;
+		}
+	}
+
+	if (!pwm_is_ready_dt(&(servo.dev_spec))) {
+		LOG_ERR("PWM: Servo is not ready\n");
+		return 0;
+	}
+
+	if (!gpio_is_ready_dt(&(bts.input_1))) {
+		LOG_ERR("DC-motor: input %d is not ready\n",
+						bts.input_1.pin);
+		return 0;
+	}
+	if (!gpio_is_ready_dt(&(bts.input_2))) {
+		LOG_ERR("DC-motor: input %d is not ready\n",
+						bts.input_2.pin);
+		return 0;
+	}
+	
+	for (size_t i = 0U; i < ARRAY_SIZE(tb6600); i++) {
+		if (!gpio_is_ready_dt(&(tb6600[i].dir))) {
+			LOG_ERR("Stepper Motor %d: Dir %d is not ready\n", i,
+							tb6600[i].dir.pin);
+			return 0;
+		}
+		if (!gpio_is_ready_dt(&(tb6600[i].step))) {
+			LOG_ERR("Stepper Motor %d: Step %d is not ready\n", i,
+							tb6600[i].step.pin);
+			return 0;
+		}
+	}
+
 	/* Start up configurations */
+	if (gpio_pin_configure_dt(&(bts.input_1), GPIO_OUTPUT_INACTIVE)) {
+		LOG_ERR("Error : DC motor not configured\n");
+		return 0;
+	}
+	if (gpio_pin_configure_dt(&(bts.input_2), GPIO_OUTPUT_INACTIVE)) {
+		LOG_ERR("Error : DC motor not configured\n");
+		return 0;
+	}
+
+	for (size_t i = 0U; i < ARRAY_SIZE(tb6600); i++) {
+		if(gpio_pin_configure_dt(&(tb6600[i].dir), GPIO_OUTPUT_INACTIVE)) {
+			LOG_ERR("Error: Stepper motor %d: Dir %d not configured", i,
+							tb6600[i].dir.pin);
+			return 0;
+		}
+		if(gpio_pin_configure_dt(&(tb6600[i].step), GPIO_OUTPUT_INACTIVE)) {
+			LOG_ERR("Error: Stepper motor %d: Dir %d not configured", i,
+							tb6600[i].step.pin);
+			return 0;
+		}	
+	}
 
 #ifdef CONFIG_LOOPBACK_MODE
 
