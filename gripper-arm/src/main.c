@@ -51,6 +51,7 @@ struct pwm_motor roboclaw[ROBOCLAWS_COUNT] = {
 	}
 };
 
+/* DT spec for servo */
 struct pwm_motor servo = {
 	.dev_spec = PWM_DT_SPEC_GET(DT_ALIAS(pwm_servo1)),
 	.min_pulse = DT_PROP(DT_ALIAS(pwm_servo1), min_pulse),
@@ -69,6 +70,12 @@ struct stepper_motor tb6600[STEPPER_MOTOR_COUNT] = {
 		.dir = GPIO_DT_SPEC_GET(DT_ALIAS(stepper_motor2), dir_gpios),
 		.step = GPIO_DT_SPEC_GET(DT_ALIAS(stepper_motor2), step_gpios)
 	}
+};
+
+/* DT spec for dc motor */
+const struct dc_motor bts = {
+	.input_1 = GPIO_DT_SPEC_GET_BY_IDX(DT_ALIAS(dc_motor), gpios, 0),
+	.input_2 = GPIO_DT_SPEC_GET_BY_IDX(DT_ALIAS(dc_motor), gpios, 1)
 };
 
 /* Can filter for Astro Assist*/

@@ -1,4 +1,13 @@
 / {
+	dcmotors {
+		compatible = "dc-motors";
+		dc_motor: motor {
+			label = "DC motor";
+			gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>,
+				<&gpioa 15 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
 	pwmmotors {
 		compatible = "pwm-motors";
 		pwm_motor_1: pwm_1 {
@@ -42,6 +51,7 @@
 		pwm-servo1 = &pwm_servo_1;
 		stepper-motor1 = &stepper_motor_1;
 		stepper-motor2 = &stepper_motor_2;
+		dc-motor = &dc_motor;
 	};
 
 	chosen {
