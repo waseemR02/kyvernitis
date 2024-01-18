@@ -195,7 +195,11 @@ int main()
 				return 0;
 			}
 			LOG_INF("Set all servo motors to previous state");
-
+			
+			if(dc_motor_write(&bts, DC_MOTOR_STOP)) {
+				return 0;
+			}
+			LOG_INF("Stopped dc motors");
 			continue;
 		}
 				
@@ -232,6 +236,12 @@ int main()
 			else if (frame.data[5] < STEPPER_BASE_ID + STEPPER_MOTOR_COUNT) {
 				if(stepper_motor_write(&tb6600[frame.data[5] - STEPPER_BASE_ID], frame.data_32[0])) {
 					LOG_ERR("Unable to write motor command to Stepper: %d", frame.data[5]);
+					return 0;
+				}
+			}
+			else if (frame.data[5] == 25) {
+				if(dc_motor_write(&bts, frame.data_32[0])) {
+					LOG_ERR("Unable to write motor command to DC motor");
 					return 0;
 				}
 			}
