@@ -23,7 +23,7 @@
                 status = "okay";
                 reg = <0x0>;
                 osc-freq = <8000000>;
-                bus-speed = <125000>;
+                bus-speed = <800000>;
                 sjw = <1>;
                 sample-point = <875>;
 
