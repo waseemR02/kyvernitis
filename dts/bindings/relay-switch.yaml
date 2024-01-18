@@ -1,0 +1,11 @@
+description: Relay Switch Binding 
+
+compatible: "relay-switches"
+
+properties:
+  gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO pin phandle for each instance of relay switch. 
+

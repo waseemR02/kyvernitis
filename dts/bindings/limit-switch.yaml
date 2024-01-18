@@ -1,0 +1,11 @@
+description: Limit Switch Binding 
+
+compatible: "limit-switches"
+
+properties:
+  gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO pin phandle for each instance of limit switch. 
+

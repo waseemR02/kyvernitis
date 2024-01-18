@@ -33,6 +33,7 @@ struct can_frame rx_frame;
 
 int main()
 {
+	printk("\ntests/read_can: v1.0.0\n\n");
 	int filter_id;
 	
 	if (!device_is_ready(can_dev)) {
@@ -63,15 +64,16 @@ int main()
 		LOG_ERR("Error: Led not configured\n");
 		return 0;
 	}
+	
+	LOG_INF("Initialization completed successfully\n");
 
 	while (true)
 	{
 		k_msgq_get(&rx_msgq, &rx_frame, K_FOREVER);
-
+		gpio_pin_toggle_dt(&led);
 		printk("Frame recieved\n");
-		printk("Frame ID: %d\n", rx_frame.id);
-		printk("Message Type: %d\n", rx_frame.data[4]);
-		printk("Rest of the data: %d: %d\n\n", rx_frame.data[5], rx_frame.data_32[0]);
+		printk("Frame ID: %x\n", rx_frame.id);
+		printk("Frame Data: %d %d %d\n\n", rx_frame.data_32[0], rx_frame.data[4], rx_frame.data[5]);
 	}
 	return 0;
 }
