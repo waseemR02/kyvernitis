@@ -233,10 +233,7 @@ int main(void)
 	printk("\nBio-arm: v%s\n\n", APP_VERSION_STRING);
 
 	int err;
-	uint32_t pulse = 15200000;
 
-
-	ARG_UNUSED(pulse);
 	/* Device ready checks*/
 
 	if (!device_is_ready(can_dev)) {
