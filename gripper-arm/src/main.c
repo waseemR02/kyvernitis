@@ -239,7 +239,7 @@ int main()
 					return 0;
 				}
 			}
-			else if (frame.data[5] == 25) {
+			else if (frame.data[5] == 27) {
 				if(dc_motor_write(&bts, frame.data_32[0])) {
 					LOG_ERR("Unable to write motor command to DC motor");
 					return 0;
