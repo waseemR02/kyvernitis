@@ -87,3 +87,4 @@ float MQ136_readings(int adc_reading) {
 float MQ137_readings(int adc_reading) {
 	float ppm = adc_reading * (500.0 - 5.0) / 4096.0;
 	return ppm;
+}
