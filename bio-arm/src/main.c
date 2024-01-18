@@ -202,8 +202,8 @@ void tx_thread(void *unused1, void *unused2, void *unused3)
 							bio_arm_tx_frame.data[4],
 							bio_arm_tx_frame.data[5]);
 
-		gpio_pin_toggle_dt(&led);
 		k_sleep(K_SECONDS(1));
+		gpio_pin_toggle_dt(&led);
 
 
 		if(sensor_channel_get(dht11, SENSOR_CHAN_HUMIDITY, &humd)) {
@@ -218,8 +218,8 @@ void tx_thread(void *unused1, void *unused2, void *unused3)
 							bio_arm_tx_frame.data[4],
 							bio_arm_tx_frame.data[5]);
 
-		gpio_pin_toggle_dt(&led);
 		k_sleep(K_SECONDS(1));
+		gpio_pin_toggle_dt(&led);
 	}
 
 	return;
