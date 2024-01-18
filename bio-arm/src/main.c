@@ -1,18 +1,40 @@
+/*
+ * Source file for Bio Arm Application
+ */
+
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/pwm.h>
+#include <zephyr/drivers/can.h>
+#include <zephyr/drivers/sensor.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
-
+#include <zephyr/logging/log.h>
 #include <app_version.h>
 
-#include <zephyr/logging/log.h>
+#include <kycan.h>
+#include <kyvernitis.h>
+
+#define ROBOCLAWS_COUNT 2
+#define SERVOS_COUNT 2
+#define TX_THREAD_STACK_SIZE 512
+#define TX_THREAD_PRIORITY 2
 
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
+CAN_MSGQ_DEFINE(rx_msgq, 10);
+
+#ifdef CONFIG_TX_MODE
+
+#define TX_THREAD_STACK_SIZE 512
+#define TX_THREAD_PRIORITY 2
+
+K_THREAD_STACK_DEFINE(tx_thread_stack, TX_THREAD_STACK_SIZE);
+
+#endif
 
 #if !DT_NODE_EXISTS(DT_PATH(zephyr_user)) || \
 	!DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
@@ -22,158 +44,105 @@ LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 #define DT_SPEC_AND_COMMA(node_id, prop, idx) \
 	ADC_DT_SPEC_GET_BY_IDX(node_id, idx),
 
-static const uint8_t pwm_motor_count = 4;
-
-/* Data of ADC io-channels specified in devicetree. */
+/* DT spec for adc channels */
 static const struct adc_dt_spec adc_channels[] = {
 	DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), io_channels,
 			     DT_SPEC_AND_COMMA)
 };
 
+/* DT spec for led*/
 static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
 
-struct pwm_motor {
-	const struct pwm_dt_spec dev_spec;
-	const uint32_t min_pulse;
-	const uint32_t max_pulse;
+/* DT spec for roboclaws*/
+struct pwm_motor roboclaw[ROBOCLAWS_COUNT] = {
+	{
+		.dev_spec = PWM_DT_SPEC_GET(DT_ALIAS(pwm_motor1)),
+		.min_pulse = DT_PROP(DT_ALIAS(pwm_motor1), min_pulse),
+		.max_pulse = DT_PROP(DT_ALIAS(pwm_motor1), max_pulse)
+	},
+	{
+		.dev_spec = PWM_DT_SPEC_GET(DT_ALIAS(pwm_motor2)),
+		.min_pulse = DT_PROP(DT_ALIAS(pwm_motor2), min_pulse),
+		.max_pulse = DT_PROP(DT_ALIAS(pwm_motor2), max_pulse)
+	}
 };
 
-static const struct pwm_motor roboclaw_1 = {
-	
-	.dev_spec = PWM_DT_SPEC_GET(DT_ALIAS(pwm_motor1)),
-	.min_pulse = DT_PROP(DT_ALIAS(pwm_motor1), min_pulse),
-	.max_pulse = DT_PROP(DT_ALIAS(pwm_motor1), max_pulse)
+/* DT spec for servos*/
+struct pwm_motor servo[SERVOS_COUNT] = {
+	{
+		.dev_spec = PWM_DT_SPEC_GET(DT_ALIAS(pwm_servo1)),
+		.min_pulse = DT_PROP(DT_ALIAS(pwm_servo1), min_pulse),
+		.max_pulse = DT_PROP(DT_ALIAS(pwm_servo1), max_pulse)
+	},
+	{
+		.dev_spec = PWM_DT_SPEC_GET(DT_ALIAS(pwm_servo2)),
+		.min_pulse = DT_PROP(DT_ALIAS(pwm_servo2), min_pulse),
+		.max_pulse = DT_PROP(DT_ALIAS(pwm_servo2), max_pulse)
+	}
 };
 
-static const struct pwm_motor roboclaw_2 = {
-	.dev_spec = PWM_DT_SPEC_GET(DT_ALIAS(pwm_motor2)),
-	.min_pulse = DT_PROP(DT_ALIAS(pwm_motor2), min_pulse),
-	.max_pulse = DT_PROP(DT_ALIAS(pwm_motor2), max_pulse)
+/* Servo state for servos */
+servo_state_t servo_state[SERVOS_COUNT] = {SERVO_DEFAULT_STATE, SERVO_DEFAULT_STATE};
+
+/* DT spec for dht11 sensor */
+const struct device *const dht11 = DEVICE_DT_GET(DT_ALIAS(dht_11));
+
+/* DT spec for can module*/
+const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+
+/*
+ * CAN frames and filter for Bio Arm
+ */
+const struct can_filter bio_arm_filter = {
+	.flags = CAN_FILTER_DATA | CAN_FILTER_IDE,
+	.id = BIO_ARM_ID,
+	.mask = CAN_EXT_ID_MASK
 };
 
-static const struct pwm_motor servo_1 = {
-	.dev_spec = PWM_DT_SPEC_GET(DT_ALIAS(pwm_servo1)),
-	.min_pulse = DT_PROP(DT_ALIAS(pwm_servo1), min_pulse),
-	.max_pulse = DT_PROP(DT_ALIAS(pwm_servo1), max_pulse)
+struct can_frame bio_arm_rx_frame;
+
+#ifdef CONFIG_TX_MODE
+
+/* Transfer thread */
+
+struct can_frame bio_arm_tx_frame = {
+	.flags = CAN_FRAME_IDE,
+	.id = LATTEPANDA_ID,
+	.dlc = 6,
+	.data[4] = SENSOR_DATA_ID
 };
 
-static const struct pwm_motor servo_2 = {
-	.dev_spec = PWM_DT_SPEC_GET(DT_ALIAS(pwm_servo2)),
-	.min_pulse = DT_PROP(DT_ALIAS(pwm_servo2), min_pulse),
-	.max_pulse = DT_PROP(DT_ALIAS(pwm_servo2), max_pulse)
-};
 
 
-// Wrapper around pwm_set_pulse_dt to ensure that pulse_width
-// remains under max-min range
-static inline int pwm_motor_write(const struct pwm_motor *motor, uint32_t pulse_width)
+struct k_thread tx_thread_data;
+
+void tx_thread(void *unused1, void *unused2, void *unused3)
 {
-	// wrapper around pwm_set_pulse_dt to ensure that pulse_width 
-	// remains under max-min range
-	if (pulse_width <= motor->min_pulse)
-		pulse_width = motor->min_pulse;
-	if (pulse_width >= motor->max_pulse)
-		pulse_width = motor->max_pulse;
-	
-	int ret = pwm_set_pulse_dt(&(motor->dev_spec), pulse_width);
-	return ret;
-}
+	ARG_UNUSED(unused1);
+	ARG_UNUSED(unused2);
+	ARG_UNUSED(unused3);
 
-// returns the number of ready pwm motors
-static inline int pwm_motors_ready()
-{
-	uint8_t device_count = 0;
-	if (!pwm_is_ready_dt(&(roboclaw_1.dev_spec))){
-		printk("Error: PWM device %s is not ready\n", roboclaw_1.dev_spec.dev->name);
-		device_count += 1;
-	}
-
-	if (!pwm_is_ready_dt(&(roboclaw_2.dev_spec))){
-		printk("Error: PWM device %s is not ready\n", roboclaw_2.dev_spec.dev->name);
-		device_count += 1;
-	}
-
-	if (!pwm_is_ready_dt(&(servo_1.dev_spec))){
-		printk("Error: PWM device %s is not ready\n", servo_1.dev_spec.dev->name);
-		device_count += 1;
-	}
-
-	if (!pwm_is_ready_dt(&(servo_2.dev_spec))){
-		printk("Error: PWM device %s is not ready\n", servo_2.dev_spec.dev->name);
-		device_count += 1;
-	}
-
-	return device_count;
-}
-
-enum direction {
-	DOWN,
-	UP,
-};
-
-int main(void)
-{
-	printk("Bio-arm: v%s", APP_VERSION_STRING);
 	int err;
-	uint32_t count = 0;
+	float val;
 	uint16_t buf;
-	uint32_t pulse = 15200000;
-	enum direction dir = UP;
 	struct adc_sequence sequence = {
 		.buffer = &buf,
 		/* buffer size in bytes, not number of samples */
 		.buffer_size = sizeof(buf),
 	};
 	
-	/* Configure channels individually prior to sampling. */
-	for (size_t i = 0U; i < ARRAY_SIZE(adc_channels); i++) {
-		if (!adc_is_ready_dt(&adc_channels[i])) {
-			printk("ADC controller device %s not ready\n", adc_channels[i].dev->name);
-			return 0;
-		}
-
-		err = adc_channel_setup_dt(&adc_channels[i]);
-		if (err < 0) {
-			printk("Could not setup channel #%d (%d)\n", i, err);
-			return 0;
-		}
-	}
-	
-	if (pwm_motors_ready() == pwm_motor_count)
-	{
-		printk("Error: All instances of PWM motors are not ready\n");
-		return 0;
-	}
-	if (!gpio_is_ready_dt(&led))
-	{
-		printk("Error: Led not ready\n");
-		return 0;
-	}
-	if (gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE) < 0)
-	{
-		printk("Error: Led not configured\n");
-		return 0;
-	}
-	pwm_motor_write(&roboclaw_1, pulse);
-	pwm_motor_write(&roboclaw_2, pulse);
-	pwm_motor_write(&servo_1, pulse);
-	pwm_motor_write(&servo_2, pulse);
-	k_sleep(K_SECONDS(10));
+	struct sensor_value temp;
+	struct sensor_value humd;
 
 	while (1) {
-		printk("ADC reading[%u]:\n", count++);
 		for (size_t i = 0U; i < ARRAY_SIZE(adc_channels); i++) {
 			int32_t val_mv;
-
-			printk("- %s, channel %d: ",
-			       adc_channels[i].dev->name,
-			       adc_channels[i].channel_id);
 
 			(void)adc_sequence_init_dt(&adc_channels[i], &sequence);
 
 			err = adc_read_dt(&adc_channels[i], &sequence);
 			if (err < 0) {
-				printk("Could not read (%d)\n", err);
+				LOG_ERR("Could not read (%d)\n", err);
 				continue;
 			}
 
@@ -187,54 +156,233 @@ int main(void)
 			} else {
 				val_mv = (int32_t)buf;
 			}
-			printk("%"PRId32, val_mv);
-			err = adc_raw_to_millivolts_dt(&adc_channels[i],
-						       &val_mv);
-			/* conversion to mV may not be supported, skip if not */
-			if (err < 0) {
-				printk(" (value in mV not available)\n");
-			} else {
-				printk(" = %"PRId32" mV\n", val_mv);
+			
+			if (adc_channels[i].channel_id == 0) {
+                                val = MQ136_readings(val_mv);
+                        } 
+			else if (adc_channels[i].channel_id == 1) {
+                                val = MQ2_readings(val_mv);
+                        } 
+			else if (adc_channels[i].channel_id == 8) {
+                                val = MQ137_readings(val_mv);
+                        } 
+			else if (adc_channels[i].channel_id == 9) {
+                                val = MQ7_readings(val_mv);
 			}
-		}
-		while (dir == UP)
-		{
-			err = pwm_motor_write(&roboclaw_1, pulse);
-			err += pwm_motor_write(&roboclaw_2, pulse);
-			err += pwm_motor_write(&servo_1, pulse);
-			err += pwm_motor_write(&servo_2, pulse);
-			if (err < 0)
-			{
-				printk("Error: %d failed to set pulse width\n", err);
-				return 0;
+			else {
+				continue;
 			}
 
-			pulse += 1000000 ;
-
-			if (pulse >= 19200000)
-				dir = DOWN;
-			gpio_pin_toggle_dt(&led);
+			LOG_INF("Channel:%d = %"PRId32" mV\n", i, (int32_t)val);
+			bio_arm_tx_frame.data_32[0] = (uint32_t)val;
+			bio_arm_tx_frame.data[5] = (uint8_t)adc_channels[i].channel_id;
+			can_send(can_dev, &bio_arm_tx_frame, K_MSEC(100), NULL, NULL);
+			LOG_INF("CAN frame sent: ID: %x", bio_arm_tx_frame.id);
+			LOG_INF("CAN frame data: %d %d %d", bio_arm_tx_frame.data_32[0],
+								bio_arm_tx_frame.data[4],
+								bio_arm_tx_frame.data[5]);
 			k_sleep(K_SECONDS(1));
-		}
-		while (dir == DOWN)
-		{
-			err = pwm_motor_write(&roboclaw_1, pulse);
-			err += pwm_motor_write(&roboclaw_2, pulse);
-			err += pwm_motor_write(&servo_1, pulse);
-			err += pwm_motor_write(&servo_2, pulse);
-
-			if (err < 0)
-			{
-				printk("Error: %d failed to set pulse width\n", err);
-				return 0;
-			}
-
-			pulse -= 1000000;
-
-			if (pulse <= 11200000)
-				dir = UP;
 			gpio_pin_toggle_dt(&led);
-			k_sleep(K_SECONDS(1));
+		}
+
+		if(sensor_sample_fetch(dht11)) {
+			LOG_ERR("Error fetching dht11 data");
+			continue;
+		}
+
+		if(sensor_channel_get(dht11, SENSOR_CHAN_AMBIENT_TEMP, &temp)) {
+			LOG_ERR("Error fetching dht11 temperature data");
+			continue;
+		}
+		bio_arm_tx_frame.data[5] = 2;
+		bio_arm_tx_frame.data_32[0] = (uint32_t)sensor_value_to_float(&temp);
+		can_send(can_dev, &bio_arm_tx_frame, K_MSEC(100), NULL, NULL);
+		LOG_INF("CAN frame sent: ID: %x", bio_arm_tx_frame.id);
+		LOG_INF("CAN frame data: %d %d %d", bio_arm_tx_frame.data_32[0],
+							bio_arm_tx_frame.data[4],
+							bio_arm_tx_frame.data[5]);
+
+		k_sleep(K_SECONDS(1));
+		gpio_pin_toggle_dt(&led);
+
+
+		if(sensor_channel_get(dht11, SENSOR_CHAN_HUMIDITY, &humd)) {
+			LOG_ERR("Error fetching dht11 humidity data");
+			continue;
+		}
+		bio_arm_tx_frame.data[5] = 3;
+		bio_arm_tx_frame.data_32[0] = (uint32_t)sensor_value_to_float(&humd);
+		can_send(can_dev, &bio_arm_tx_frame, K_MSEC(100), NULL, NULL);
+		LOG_INF("CAN frame sent: ID: %x", bio_arm_tx_frame.id);
+		LOG_INF("CAN frame data: %d %d %d", bio_arm_tx_frame.data_32[0],
+							bio_arm_tx_frame.data[4],
+							bio_arm_tx_frame.data[5]);
+
+		k_sleep(K_SECONDS(1));
+		gpio_pin_toggle_dt(&led);
+	}
+
+	return;
+}
+
+#endif
+
+
+int main(void)
+{
+	printk("\nBio-arm: v%s\n\n", APP_VERSION_STRING);
+
+	int err;
+
+	/* Device ready checks*/
+
+	if (!device_is_ready(can_dev)) {
+		LOG_ERR("CAN: Device %s not ready.", can_dev->name);
+		return 0;
+	}
+
+	/* Configure channels individually prior to sampling. */
+	for (size_t i = 0U; i < ARRAY_SIZE(adc_channels); i++) {
+		if (!adc_is_ready_dt(&adc_channels[i])) {
+			LOG_ERR("ADC controller device %s not ready\n", adc_channels[i].dev->name);
+		}
+
+		err = adc_channel_setup_dt(&adc_channels[i]);
+		if (err < 0) {
+			LOG_ERR("Could not setup channel #%d (%d)\n", i, err);
+		}
+	}
+	
+	if(!device_is_ready(dht11)) {
+		LOG_ERR("DHT11 sensor not ready.");
+	}
+
+	// check for pwm motor readiness
+	for (size_t i = 0U; i < ARRAY_SIZE(roboclaw); i++) {
+		if (!pwm_is_ready_dt(&(roboclaw[i].dev_spec))) {
+			LOG_ERR("PWM: Roboclaw %s is not ready\n", roboclaw[i].dev_spec.dev->name);
+			return 0;
+		}
+	}
+
+	for (size_t i = 0U; i < ARRAY_SIZE(servo); i++) {
+		if (!pwm_is_ready_dt(&(servo[i].dev_spec))) {
+			LOG_ERR("PWM: Servo %s is not ready\n", servo[i].dev_spec.dev->name);
+			return 0;
+		}
+	}
+
+	if (!gpio_is_ready_dt(&led))
+	{
+		LOG_ERR("Error: Led not ready\n");
+		return 0;
+	}
+
+	if (gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE) < 0)
+	{
+		LOG_ERR("Error: Led not configured\n");
+		return 0;
+	}
+	
+#ifdef CONFIG_LOOPBACK_MODE
+	if (can_set_mode(can_dev, CAN_MODE_LOOPBACK)) {
+		LOG_ERR("Error setting CAN mode");
+		return 0;
+	}
+#endif
+	if (can_start(can_dev)) {
+		LOG_ERR("Error starting CAN controller.\n");
+		return 0;
+	}
+
+	int filter_id = can_add_rx_filter_msgq(can_dev, &rx_msgq, &bio_arm_filter);
+	if (filter_id < 0)
+	{
+		LOG_ERR("Unable to add rx msgq [%d]", filter_id);
+		return 0;
+	}
+
+#ifdef CONFIG_TX_MODE
+
+	k_tid_t tx_tid = k_thread_create(&tx_thread_data, tx_thread_stack,
+				 K_THREAD_STACK_SIZEOF(tx_thread_stack),
+				 tx_thread, NULL, NULL, NULL,
+				 TX_THREAD_PRIORITY, 0, K_NO_WAIT);
+
+	if (!tx_tid) {
+		LOG_ERR("ERROR spawning tx thread\n");
+	}
+
+#endif
+	LOG_INF("Initialization completed successfully\n");
+	while (true)
+	{
+		if(k_msgq_get(&rx_msgq, &bio_arm_rx_frame, K_MSEC(1000)))
+		{
+			LOG_ERR("Message Receive Timeout!!");
+			/* Send stop cmd to roboclaw */
+			for(size_t i = 0U; i < ARRAY_SIZE(roboclaw); i++) {
+				err = pwm_motor_write(&roboclaw[i], PWM_MOTOR_STOP);
+				if(err) {
+					LOG_ERR("Unable to write pwm pulse to Roboclaw: %d", i + ROBOCLAW_BASE_ID);
+					return 0;
+				}
+			}
+			LOG_INF("Stopped roboclaw");
+
+			for(size_t i = 0U; i < ARRAY_SIZE(servo); i++) {
+				err = pwm_motor_write(&servo[i], servo_state[i]);
+				if(err) {
+					LOG_ERR("Unable to write pwm pulse to Servo: %d", i + SERVO_BASE_ID);
+					return 0;
+				}
+			}
+			LOG_INF("Set all servo motors to previous state");
+
+			continue;
+		}
+
+		struct can_frame frame = bio_arm_rx_frame;
+
+		LOG_INF("CAN frame sent: ID: %d", frame.id);
+		LOG_INF("CAN frame data: %d %d %d", frame.data_32[0],
+							frame.data[4],
+							frame.data[5]);
+
+		if(frame.dlc != 6)
+		{
+			//just handling motor commands for now
+			LOG_ERR("Unknown Frame Received\n");
+			continue;
+		}
+
+		switch (frame.data[4]) {
+		
+		case ACTUATOR_COMMAND_ID:
+			if (frame.data[5] < ROBOCLAW_BASE_ID + ROBOCLAWS_COUNT)
+			{
+				// in the case it will only consider from 10 - 11
+				if (pwm_motor_write(&roboclaw[frame.data[5] - ROBOCLAW_BASE_ID], frame.data_32[0])) {
+					LOG_ERR("Unable to write pwm pulse to PWM motor: %d", frame.data[5]);
+					return 0;
+				}
+			}
+			else if (frame.data[5] < SERVO_BASE_ID + SERVOS_COUNT)
+			{
+				// it will consider from 15 - 19
+				if(pwm_motor_write(&servo[frame.data[5] - SERVO_BASE_ID], frame.data_32[0])) {
+					LOG_ERR("Unable to write pwm pulse to Servo Motor: %d", frame.data[5]);
+					return 0;
+				}
+				else {
+					servo_state[frame.data[5] - SERVO_BASE_ID] = frame.data_32[0];
+				}
+			}
+			break;
+		
+		case SENSOR_DATA_ID:
+			LOG_INF("Received sensor data\n");
+			break;
 		}
 	}
 	return 0;
