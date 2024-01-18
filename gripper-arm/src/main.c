@@ -247,6 +247,7 @@ int main()
 			}
 			break;
 		}
+		gpio_pin_toggle_dt(&led);
 	}
 	return 0;
 }
