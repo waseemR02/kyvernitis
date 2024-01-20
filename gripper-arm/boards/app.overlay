@@ -24,8 +24,8 @@
 
 		pwm_servo_1: pwm_3 {
 			pwms = <&pwm2 1 PWM_MSEC(20) (PWM_POLARITY_NORMAL)>;
-			min-pulse = <PWM_USEC(1120)>;
-			max-pulse = <PWM_USEC(1920)>;
+			min-pulse = <PWM_USEC(600)>;
+			max-pulse = <PWM_USEC(2400)>;
 		};
 
 	};
