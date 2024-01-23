@@ -78,7 +78,7 @@ const struct dc_motor bts = {
 	.input_2 = GPIO_DT_SPEC_GET_BY_IDX(DT_ALIAS(dc_motor), gpios, 1)
 };
 
-/* Can filter for Astro Assist*/
+/* Can filter for Gripper-Arm */
 const struct can_filter gripper_arm_filter = {
 	.flags = CAN_FILTER_DATA | CAN_FILTER_IDE,
 	.id = GRIPPER_ARM_ID,
