@@ -90,3 +90,42 @@ int dc_motor_write(const struct dc_motor *motor, uint8_t motor_cmd)
 
 	return 0;
 }
+
+/*
+ * Writes motor command to dc motors with limit switches
+ */
+int dc_motor_write_lim(const struct dc_motor *motor, uint8_t motor_cmd, const struct gpio_dt_spec *lim)
+{
+	int ret = 1;
+	
+	if(!gpio_pin_get_dt(lim)) {
+		ret = dc_motor_write(motor, motor_cmd);
+	}
+	else {
+		ret = dc_motor_write(motor, DC_MOTOR_STOP);
+	}
+	
+
+	return ret;
+}
+
+
+float MQ2_readings(int adc_reading) {
+	int ppm = adc_reading * (10000 - 300) / 4096;
+	return ppm;
+}
+
+float MQ7_readings(int adc_reading) {
+	int ppm = adc_reading * (2000 - 20) / 4096;
+	return ppm;
+}
+
+float MQ136_readings(int adc_reading) {
+	float ppm = adc_reading * (100.0 - 1.0) / 4096.0;
+	return ppm;
+}
+
+float MQ137_readings(int adc_reading) {
+	float ppm = adc_reading * (500.0 - 5.0) / 4096.0;
+	return ppm;
+}

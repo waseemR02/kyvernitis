@@ -3,30 +3,36 @@
 		compatible = "pwm-motors";
 		pwm_motor_1: pwm_1 {
 			pwms = <&pwm1 2 PWM_MSEC(20) (PWM_POLARITY_NORMAL)>;
-			min-pulse = <PWM_USEC(11200)>;
-			max-pulse = <PWM_USEC(19200)>;
+			min-pulse = <PWM_USEC(1120)>;
+			max-pulse = <PWM_USEC(1920)>;
 		};
 		pwm_motor_2: pwm_2 {
 			pwms = <&pwm2 1 PWM_MSEC(20) (PWM_POLARITY_NORMAL)>;
-			min-pulse = <PWM_USEC(11200)>;
-			max-pulse = <PWM_USEC(19200)>;
+			min-pulse = <PWM_USEC(1120)>;
+			max-pulse = <PWM_USEC(1920)>;
 		};
 
 		pwm_servo_1: pwm_3 {
 			pwms = <&pwm3 2 PWM_MSEC(20) (PWM_POLARITY_NORMAL)>;
-			min-pulse = <PWM_USEC(11200)>;
-			max-pulse = <PWM_USEC(19200)>;
+			min-pulse = <PWM_USEC(600)>;
+			max-pulse = <PWM_USEC(2400)>;
 		};
 
 		pwm_servo_2: pwm_4 {
 			pwms = <&pwm4 3 PWM_MSEC(20) (PWM_POLARITY_NORMAL)>;
-			min-pulse = <PWM_USEC(11200)>;
-			max-pulse = <PWM_USEC(19200)>;
+			min-pulse = <PWM_USEC(600)>;
+			max-pulse = <PWM_USEC(2400)>;
 		};
 	};
 
+	dht11: dh22 {
+		compatible = "aosong,dht";
+		status="okay";
+		dio-gpios = <&gpioa 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+	};
+
 	zephyr,user {
-		io-channels = <&adc1 0>, <&adc1 1>, <&adc1 2>, <&adc1 3>, <&adc1 4>, <&adc1 8>, <&adc1 9>;
+		io-channels = <&adc1 0>, <&adc1 1>, <&adc1 8>, <&adc1 9>;
 	};
 
 	aliases {
@@ -34,6 +40,7 @@
 		pwm-motor2 = &pwm_motor_2;
 		pwm-servo1 = &pwm_servo_1;
 		pwm-servo2 = &pwm_servo_2;
+		dht-11 = &dht11;
 	};
 
 	chosen {
@@ -94,7 +101,7 @@
 };
 
 &adc1 {
-	pinctrl-0 = <&adc1_in0_pa0 &adc1_in1_pa1 &adc1_in2_pa2 &adc1_in3_pa3 &adc1_in4_pa4 &adc1_in8_pb0 &adc1_in9_pb1>;
+	pinctrl-0 = <&adc1_in0_pa0 &adc1_in1_pa1 &adc1_in8_pb0 &adc1_in9_pb1>;
 	pinctrl-names = "default";
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -109,30 +116,6 @@
 
 	channel@1 {
 		reg = <1>;
-		zephyr,gain = "ADC_GAIN_1";
-		zephyr,reference = "ADC_REF_INTERNAL";
-		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
-		zephyr,resolution = <12>;
-	};
-
-	channel@2 {
-		reg = <2>;
-		zephyr,gain = "ADC_GAIN_1";
-		zephyr,reference = "ADC_REF_INTERNAL";
-		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
-		zephyr,resolution = <12>;
-	};
-
-	channel@3 {
-		reg = <3>;
-		zephyr,gain = "ADC_GAIN_1";
-		zephyr,reference = "ADC_REF_INTERNAL";
-		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
-		zephyr,resolution = <12>;
-	};
-
-	channel@4 {
-		reg = <4>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
@@ -166,7 +149,7 @@
 		status = "okay";
 		reg = <0x0>;
 		osc-freq = <8000000>;
-		bus-speed = <125000>;
+		bus-speed = <800000>;
 		sjw = <1>;
 		sample-point = <875>;
 

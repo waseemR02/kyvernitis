@@ -5,8 +5,12 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 
+#include <zephyr/drivers/pwm.h>
+#include <zephyr/drivers/gpio.h>
+
+
 #define MAX_ROBOCLAWS 2
-#define MAX_SABERTOOTHS 3
+#define MAX_SABERTOOTHS 2
 #define MAX_SERVOS 5
 
 #define PWM_MOTOR_STOP 1520000
@@ -45,10 +49,12 @@ int stepper_motor_write(const struct stepper_motor *motor, uint8_t cmd);
 
 int dc_motor_write(const struct dc_motor *motor, uint8_t motor_cmd);
 
-float MQ2_readings(int mv);
+int dc_motor_write_lim(const struct dc_motor *motor, uint8_t motor_cmd, const struct gpio_dt_spec *lim);
 
-float MQ7_readings(int mv);
+float MQ2_readings(int adc_reading);
 
-float MQ136_readings(int mv);
+float MQ7_readings(int adc_reading);
 
-float MQ137_readings(int mv);
+float MQ136_readings(int adc_reading);
+
+float MQ137_readings(int adc_reading);
