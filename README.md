@@ -72,8 +72,9 @@ pip install west
 
 Init the workspace with the manifest repo and pull modules from upstream
 ```
-west init -m git@github.com:waseemR02/kyvernitis.git
-west update --narrow
+west init -m https://github.com/waseemR02/kyvernitis 
+west config --global update.narrow true
+west update
 pip install -r zephyr/scripts/requirements-base.txt
 source zephyr/zephyr-env.sh 
 ```
