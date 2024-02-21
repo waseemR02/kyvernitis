@@ -1,4 +1,6 @@
 # Kyvernitis
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/6655b26b23504686975095e1752b81cf)](https://app.codacy.com/gh/waseemR02/kyvernitis/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+
 Zephyr Application  for R24 to program WeAct Blackpill F401cc as daughter board (for pixhawk).
 
 Repo contains source files for each subsystem.
